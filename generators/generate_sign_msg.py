@@ -21,7 +21,7 @@ for i in range(0,maxMsgLen):
 
 f += """    ) -> u8 {
     // create secret key vec from input parameters
-    let sk_bytes = vec![
+    let sk_bytes: [u8; 32] = [
 """
 
 for i in range(0,skLen):

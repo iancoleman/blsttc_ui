@@ -3,22 +3,59 @@
 let DOM = {};
 DOM.skToPk = {};
 DOM.skToPk.generate = document.querySelectorAll("#sk-to-pk .generate")[0];
-DOM.skToPk.skHex = document.querySelectorAll("#sk-to-pk .skHex")[0];
-DOM.skToPk.pkHex = document.querySelectorAll("#sk-to-pk .pkHex")[0];
+DOM.skToPk.skHex = document.querySelectorAll("#sk-to-pk .sk-hex")[0];
+DOM.skToPk.pkHex = document.querySelectorAll("#sk-to-pk .pk-hex")[0];
+DOM.signMsg = {};
+DOM.signMsg.skHex = document.querySelectorAll("#sign-msg .sk-hex")[0];
+DOM.signMsg.msg = document.querySelectorAll("#sign-msg .msg")[0];
+DOM.signMsg.sig = document.querySelectorAll("#sign-msg .sig")[0];
 
 // threshold_crypto wasm calls
 
-function sk_bytes_to_pk_bytes(b) {
+// s is secret key unit8array
+function sk_bytes_to_pk_bytes(s) {
+    let pkLen = 48; // bytes
     let pkBytes = [];
-    for (let i=0; i<48; i++) {
-        let pkByte = wasmExports.pk_byte_from_sk(i, b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15], b[16], b[17], b[18], b[19], b[20], b[21], b[22], b[23], b[24], b[25], b[26], b[27], b[28], b[29], b[30], b[31]);
+    for (let i=0; i<pkLen; i++) {
+        let args = [i];
+        for (let j=0; j<s.length; j++) {
+            args.push(s[j]);
+        }
+        let pkByte = wasmExports.pk_byte_from_sk.apply(null, args);
         pkBytes.push(pkByte);
     }
     return pkBytes;
 }
 
+// s is secret key uint8array
+// m is message uint8array
+function sign_msg(s, m) {
+    let sigLen = 96; // bytes
+    let sigBytes = [];
+    for (let i=0; i<sigLen; i++) {
+        let args = [i, m.length];
+        for (let j=0; j<s.length; j++) {
+            args.push(s[j]);
+        }
+        for (let j=0; j<m.length; j++) {
+            args.push(m[j]);
+        }
+        let sigByte = wasmExports.sign_msg.apply(null, args);
+        sigBytes.push(sigByte);
+    }
+    return sigBytes;
+}
+
 // Encoding conversions
 
+// modified from https://stackoverflow.com/a/11058858
+function asciiToUint8Array(a) {
+    let b = new Uint8Array(a.length);
+    for (let i=0; i<a.length; i++) {
+        b[i] = a.charCodeAt(i);
+    }
+    return b;
+}
 // https://stackoverflow.com/a/50868276
 function hexToUint8Array(h) {
     return new Uint8Array(h.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
@@ -40,6 +77,8 @@ function base64ToUint8Array(b) {
 
 DOM.skToPk.skHex.addEventListener("input", skHexToPkHex);
 DOM.skToPk.generate.addEventListener("click", generateSk);
+DOM.signMsg.skHex.addEventListener("input", signMsg);
+DOM.signMsg.msg.addEventListener("input", signMsg);
 
 function generateSk() {
     // Warning if no window.crypto available
@@ -70,8 +109,9 @@ function generateSk() {
 }
 
 function skHexToPkHex() {
-    // get secret key hex from UI
+    // clear existing value
     DOM.skToPk.pkHex.value = "";
+    // get secret key hex from UI
     let skHex = DOM.skToPk.skHex.value.trim();
     if (skHex.length != 64) {
         // TODO show error
@@ -85,4 +125,28 @@ function skHexToPkHex() {
     let pkHex = uint8ArrayToHex(pkBytes);
     // show in UI
     DOM.skToPk.pkHex.value = pkHex;
+}
+
+function signMsg() {
+    // clear existing value
+    DOM.signMsg.sig.value = "";
+    // get secret key hex from UI
+    let skHex = DOM.signMsg.skHex.value.trim();
+    if (skHex.length != 64) {
+        // TODO show error
+        return "";
+    }
+    // convert sk to bytes
+    let s = hexToUint8Array(skHex);
+    // get msg from UI
+    let msg = DOM.signMsg.msg.value; // NB no trim() here
+    if (msg.length <= 0 || msg.length > 255) {
+        // TODO show error
+        return "";
+    }
+    let m = asciiToUint8Array(msg);
+    // get signature
+    let sigBytes = sign_msg(s, m);
+    let sigHex = uint8ArrayToHex(sigBytes);
+    DOM.signMsg.sig.value = sigHex;
 }

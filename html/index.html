@@ -39,10 +39,10 @@
         32 bytes ie 64 hex chars, or
         <button class="generate">generate</button> a random key.
         </p>
-        <input class="skHex" placeholder="eg 7b4ecc...">
+        <input class="sk-hex" placeholder="eg 7b4ecc...">
 
         <p>Output: Public Key Hex, 48 bytes ie 96 hex chars</p>
-        <input class="pkHex" placeholder="eg a32fc9...">
+        <input class="pk-hex" placeholder="eg a32fc9...">
     </div>
 
     <hr>
@@ -55,7 +55,7 @@
         Input: Secret Key Hex (as per bincode serialization),
         32 bytes ie 64 hex chars
         </p>
-        <input class="skHex" placeholder="eg 7b4ecc...">
+        <input class="sk-hex" placeholder="eg 7b4ecc...">
 
         <p>
         Input: Message can be any ascii input.
@@ -64,7 +64,8 @@
         <input class="msg" placeholder="eg This is my message">
 
         <p>
-        Output: The signature for this message will appear here.
+        Output: The signature for this message will appear here, 96 bytes ie
+        192 hex chars.
         </p>
         <input class="sig" placeholder="Signature will appear here.">
 
@@ -75,7 +76,7 @@
         <h2>Verify Message With Public Key</h2>
 
         <p>Input: Public Key Hex, 48 bytes ie 96 hex chars</p>
-        <input class="pkHex" placeholder="eg a32fc9...">
+        <input class="pk-hex" placeholder="eg a32fc9...">
 
         <p>
         Input: Message can be any ascii input.
@@ -91,7 +92,7 @@
         <p>
         Output: Whether the signature is valid or not.
         </p>
-        <input class="sig" placeholder="Will show 'valid' or 'invalid'">
+        <input class="valid" placeholder="Will show 'valid' or 'invalid'">
 
 
     </div>
