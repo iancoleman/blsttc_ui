@@ -1,5 +1,14 @@
+body {
+    font-family: Helvetica, Arial, Sans-serif;
+    margin: 20px;
+}
+
 input {
+    font-family: Monospace;
     width: 100%;
+    border: 2px solid #dadada;
+    border-radius: 7px;
+    padding: 8px;
 }
 
 .text-red {
