@@ -19,14 +19,17 @@ DOM.verify.valid = document.querySelectorAll("#verify .valid")[0];
 
 // s is secret key unit8array
 function sk_bytes_to_pk_bytes_wasm(s) {
+    // set sk bytes
+    for (let i=0; i<s.length; i++) {
+        wasmExports.set_sk_byte(i, s[i]);
+    }
+    // convert into pk bytes
+    wasmExports.derive_pk_from_sk();
+    // read pk bytes
     let pkLen = 48; // bytes
     let pkBytes = [];
     for (let i=0; i<pkLen; i++) {
-        let args = [i];
-        for (let j=0; j<s.length; j++) {
-            args.push(s[j]);
-        }
-        let pkByte = wasmExports.pk_byte_from_sk.apply(null, args);
+        let pkByte = wasmExports.get_pk_byte(i);
         pkBytes.push(pkByte);
     }
     return pkBytes;
@@ -35,37 +38,43 @@ function sk_bytes_to_pk_bytes_wasm(s) {
 // s is secret key uint8array
 // m is message uint8array
 function sign_msg_wasm(s, m) {
+    // set secret key bytes
+    for (let i=0; i<s.length; i++) {
+        wasmExports.set_sk_byte(i, s[i]);
+    }
+    // set message bytes
+    for (let i=0; i<m.length; i++) {
+        wasmExports.set_msg_byte(i, m[i]);
+    }
+    // sign message
+    wasmExports.sign_msg(m.length);
+    // get signature bytes
     let sigLen = 96; // bytes
     let sigBytes = [];
     for (let i=0; i<sigLen; i++) {
-        let args = [i, m.length];
-        for (let j=0; j<s.length; j++) {
-            args.push(s[j]);
-        }
-        for (let j=0; j<m.length; j++) {
-            args.push(m[j]);
-        }
-        let sigByte = wasmExports.sign_msg.apply(null, args);
+        let sigByte = wasmExports.get_sig_byte(i);
         sigBytes.push(sigByte);
     }
     return sigBytes;
 }
 
-// p is secret key uint8array
+// p is public key uint8array
 // s is signature uint8array
 // m is message uint8array
 function verify_wasm(p, s, m) {
-    let args = [m.length];
+    // set public key bytes
     for (let i=0; i<p.length; i++) {
-        args.push(p[i]);
+        wasmExports.set_pk_byte(i, p[i]);
     }
+    // set signature bytes
     for (let i=0; i<s.length; i++) {
-        args.push(s[i]);
+        wasmExports.set_sig_byte(i, s[i]);
     }
+    // set message bytes
     for (let i=0; i<m.length; i++) {
-        args.push(m[i]);
+        wasmExports.set_msg_byte(i, m[i]);
     }
-    let verified = wasmExports.verify.apply(null, args);
+    let verified = wasmExports.verify(m.length);
     return verified;
 }
 
