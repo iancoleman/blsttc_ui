@@ -1,0 +1,11 @@
+input {
+    width: 100%;
+}
+
+.text-red {
+    color: #dc3545; /* bootstrap text-danger */
+}
+
+hr {
+    margin: 70px 0;
+}
