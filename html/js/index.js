@@ -1,5 +1,6 @@
 let DOM = {};
 DOM.skToPk = {};
+DOM.skToPk.generate = document.querySelectorAll("#sk-to-pk .generate")[0];
 DOM.skToPk.skHex = document.querySelectorAll("#sk-to-pk .skHex")[0];
 DOM.skToPk.pkHex = document.querySelectorAll("#sk-to-pk .pkHex")[0];
 
@@ -21,6 +22,34 @@ function skHexToPkHex() {
     DOM.skToPk.pkHex.value = pkHex;
 }
 
+function generateSk() {
+    // Warning if no window.crypto available
+    if (!window.crypto) {
+        alert("Secure randomness not available in this browser.");
+        return
+    }
+    // Clear existing values
+    DOM.skToPk.skHex.value = "";
+    DOM.skToPk.pkHex.value = "";
+    // Not all entropy can be deserialized by threshold_crypto.
+    // Try up to ten times until we get a valid sk.
+    let max_retries = 20;
+    for (let i=0; i<max_retries; i++) {
+        try {
+            let entropy = new Uint8Array(32);
+            window.crypto.getRandomValues(entropy);
+            let h = uint8ArrayToHex(entropy);
+            DOM.skToPk.skHex.value = h;
+            skHexToPkHex();
+            console.log((i+1) + " attempts to generate sk");
+            break;
+        }
+        catch (e) {
+            // TODO maybe log a message if more than max_retries attempted?
+        }
+    }
+}
+
 // https://stackoverflow.com/a/50868276
 function hexToUint8Array(h) {
     return new Uint8Array(h.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
@@ -30,3 +59,4 @@ function uint8ArrayToHex(a) {
 }
 
 DOM.skToPk.skHex.addEventListener("input", skHexToPkHex);
+DOM.skToPk.generate.addEventListener("click", generateSk);
