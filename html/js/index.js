@@ -9,11 +9,16 @@ DOM.signMsg = {};
 DOM.signMsg.skHex = document.querySelectorAll("#sign-msg .sk-hex")[0];
 DOM.signMsg.msg = document.querySelectorAll("#sign-msg .msg")[0];
 DOM.signMsg.sig = document.querySelectorAll("#sign-msg .sig")[0];
+DOM.verify = {};
+DOM.verify.pkHex = document.querySelectorAll("#verify .pk-hex")[0];
+DOM.verify.msg = document.querySelectorAll("#verify .msg")[0];
+DOM.verify.sig = document.querySelectorAll("#verify .sig")[0];
+DOM.verify.valid = document.querySelectorAll("#verify .valid")[0];
 
 // threshold_crypto wasm calls
 
 // s is secret key unit8array
-function sk_bytes_to_pk_bytes(s) {
+function sk_bytes_to_pk_bytes_wasm(s) {
     let pkLen = 48; // bytes
     let pkBytes = [];
     for (let i=0; i<pkLen; i++) {
@@ -29,7 +34,7 @@ function sk_bytes_to_pk_bytes(s) {
 
 // s is secret key uint8array
 // m is message uint8array
-function sign_msg(s, m) {
+function sign_msg_wasm(s, m) {
     let sigLen = 96; // bytes
     let sigBytes = [];
     for (let i=0; i<sigLen; i++) {
@@ -44,6 +49,24 @@ function sign_msg(s, m) {
         sigBytes.push(sigByte);
     }
     return sigBytes;
+}
+
+// p is secret key uint8array
+// s is signature uint8array
+// m is message uint8array
+function verify_wasm(p, s, m) {
+    let args = [m.length];
+    for (let i=0; i<p.length; i++) {
+        args.push(p[i]);
+    }
+    for (let i=0; i<s.length; i++) {
+        args.push(s[i]);
+    }
+    for (let i=0; i<m.length; i++) {
+        args.push(m[i]);
+    }
+    let verified = wasmExports.verify.apply(null, args);
+    return verified;
 }
 
 // Encoding conversions
@@ -79,6 +102,9 @@ DOM.skToPk.skHex.addEventListener("input", skHexToPkHex);
 DOM.skToPk.generate.addEventListener("click", generateSk);
 DOM.signMsg.skHex.addEventListener("input", signMsg);
 DOM.signMsg.msg.addEventListener("input", signMsg);
+DOM.verify.pkHex.addEventListener("input", verify);
+DOM.verify.msg.addEventListener("input", verify);
+DOM.verify.sig.addEventListener("input", verify);
 
 function generateSk() {
     // Warning if no window.crypto available
@@ -120,7 +146,7 @@ function skHexToPkHex() {
     // convert sk to bytes
     let b = hexToUint8Array(skHex);
     // get public key from sk, will be 48 bytes ie 96 hex chars
-    let pkBytes = sk_bytes_to_pk_bytes(b);
+    let pkBytes = sk_bytes_to_pk_bytes_wasm(b);
     // convert pk to hex
     let pkHex = uint8ArrayToHex(pkBytes);
     // show in UI
@@ -146,7 +172,38 @@ function signMsg() {
     }
     let m = asciiToUint8Array(msg);
     // get signature
-    let sigBytes = sign_msg(s, m);
+    let sigBytes = sign_msg_wasm(s, m);
     let sigHex = uint8ArrayToHex(sigBytes);
     DOM.signMsg.sig.value = sigHex;
+}
+
+function verify() {
+    // clear existing value
+    DOM.verify.valid.value = "";
+    // get public key hex from UI
+    let pkHex = DOM.verify.pkHex.value.trim();
+    if (pkHex.length != 96) {
+        // TODO show error
+        return "";
+    }
+    // convert public key to bytes
+    let p = hexToUint8Array(pkHex);
+    // get signature hex from UI
+    let sigHex = DOM.verify.sig.value.trim();
+    if (sigHex.length != 192) {
+        // TODO show error
+        return "";
+    }
+    // convert signature to bytes
+    let s = hexToUint8Array(sigHex);
+    // get msg from UI
+    let msg = DOM.verify.msg.value; // NB no trim() here
+    if (msg.length <= 0 || msg.length > 255) {
+        // TODO show error
+        return "";
+    }
+    let m = asciiToUint8Array(msg);
+    // verify
+    let valid = verify_wasm(p, s, m);
+    DOM.verify.valid.value = valid ? "valid" : "invalid";
 }
