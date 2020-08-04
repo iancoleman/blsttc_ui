@@ -13,17 +13,20 @@
 
     <h1>BLS Threshold Crypto</h1>
     <p>
-    Interface for
+    Interface for rust library
     <a href="https://github.com/poanetwork/threshold_crypto">threshold_crypto</a>.
-    The rust library is compiled to web assembly and can be interacted with via
-    the forms on this page.
+    Read more about it in the
+    <a href="#info">info section</a>.
     </p>
 
     <h1 class="text-red">WARNING: PROTOTYPE</h1>
 
     <p class="text-red">
     This is a prototype tool and will definitely change in incompatible ways
-    in the future. Do not ever use this tool for anything.
+    in the future.
+    </p>
+    <p class="text-red">
+    Do not ever use this tool for anything.
     </p>
 
     <hr>
@@ -84,6 +87,53 @@
         </p>
         <input class="sig" placeholder="Will show 'valid' or 'invalid'">
 
+
+    </div>
+
+    <hr>
+
+    <div id="info">
+
+    <h2>Info</h2>
+
+    <p>
+    This tool is based on
+    <a href="https://github.com/poanetwork/threshold_crypto/tree/7709462f2df487ada3bb3243060504b5881f2628">
+    threshold_crypto v0.4.0</a>.
+    </p>
+
+    <p>
+    Since wasm is quite limited in the interface between javascript and rust,
+    this tool uses a rust wrapper around threshold_crypto which is relatively
+    awkward, but this is just an implementation detail. Not all
+    threshold_crypto functions are available in the wasm or this tool.
+    </p>
+
+    <p>
+    threshold_crypto is very cautious about revealing secret keys. You should
+    be too. You may find the secret keys in this tool are not compatible with
+    other BLS tools. That's probably because secret keys are serialized from
+    threshold_crypto using bincode.
+    </p>
+
+    <p>
+    threshold_crypto uses curve
+    <a href="https://github.com/poanetwork/threshold_crypto/blob/7709462f2df487ada3bb3243060504b5881f2628/src/lib.rs#L67">
+    BLS12-381</a>.
+    </p>
+
+    <p>
+    Since it's not abundantly obvious which source of randomness is used by
+    threshold_crypto in SecretKey::random when compiled to wasm, the tool uses
+    javascript Crypto.getRandomValues which has known assurances around the
+    strength of the random values generated.
+    </p>
+
+    <p>
+    You can use this tool without having to be online. In your browser, select
+    file save-as, and save this page as a file. Double-click that file to open
+    it in a browser on any offline computer.
+    </p>
 
     </div>
 

@@ -9,3 +9,7 @@ input {
 hr {
     margin: 70px 0;
 }
+
+#info {
+    max-width: 600px;
+}
