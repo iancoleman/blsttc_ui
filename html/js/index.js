@@ -1,4 +1,6 @@
+///////////////
 // Virtual DOM
+///////////////
 
 let DOM = {};
 DOM.skToPk = {};
@@ -23,7 +25,25 @@ DOM.decrypt.skHex = document.querySelectorAll("#decrypt .sk-hex")[0];
 DOM.decrypt.ct = document.querySelectorAll("#decrypt .ct")[0];
 DOM.decrypt.msg = document.querySelectorAll("#decrypt .msg")[0];
 
+///////////////
+// Event handlers
+///////////////
+
+DOM.skToPk.skHex.addEventListener("input", skHexToPkHex);
+DOM.skToPk.generate.addEventListener("click", generateSk);
+DOM.signMsg.skHex.addEventListener("input", signMsg);
+DOM.signMsg.msg.addEventListener("input", signMsg);
+DOM.verify.pkHex.addEventListener("input", verify);
+DOM.verify.msg.addEventListener("input", verify);
+DOM.verify.sig.addEventListener("input", verify);
+DOM.encrypt.pkHex.addEventListener("input", encrypt);
+DOM.encrypt.msg.addEventListener("input", encrypt);
+DOM.decrypt.skHex.addEventListener("input", decrypt);
+DOM.decrypt.ct.addEventListener("input", decrypt);
+
+///////////////
 // threshold_crypto wasm calls
+///////////////
 
 // s is secret key unit8array
 function sk_bytes_to_pk_bytes_wasm(s) {
@@ -134,51 +154,9 @@ function decrypt_wasm(s, c) {
     return msgBytes;
 }
 
-// Encoding conversions
-
-// modified from https://stackoverflow.com/a/11058858
-function asciiToUint8Array(a) {
-    let b = new Uint8Array(a.length);
-    for (let i=0; i<a.length; i++) {
-        b[i] = a.charCodeAt(i);
-    }
-    return b;
-}
-// https://stackoverflow.com/a/19102224
-// TODO resolve RangeError possibility here, see SO comments
-function uint8ArrayToAscii(a) {
-    return String.fromCharCode.apply(null, a);
-}
-// https://stackoverflow.com/a/50868276
-function hexToUint8Array(h) {
-    return new Uint8Array(h.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-}
-function uint8ArrayToHex(a) {
-    return a.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
-}
-// https://stackoverflow.com/a/12713326
-function uint8ArrayToBase64(a) {
-    return btoa(String.fromCharCode.apply(null, a));
-}
-function base64ToUint8Array(b) {
-    return new Uint8Array(atob(b).split("").map(function(c) {
-            return c.charCodeAt(0);
-    }));
-}
-
-// Event handlers
-
-DOM.skToPk.skHex.addEventListener("input", skHexToPkHex);
-DOM.skToPk.generate.addEventListener("click", generateSk);
-DOM.signMsg.skHex.addEventListener("input", signMsg);
-DOM.signMsg.msg.addEventListener("input", signMsg);
-DOM.verify.pkHex.addEventListener("input", verify);
-DOM.verify.msg.addEventListener("input", verify);
-DOM.verify.sig.addEventListener("input", verify);
-DOM.encrypt.pkHex.addEventListener("input", encrypt);
-DOM.encrypt.msg.addEventListener("input", encrypt);
-DOM.decrypt.skHex.addEventListener("input", decrypt);
-DOM.decrypt.ct.addEventListener("input", decrypt);
+///////////////
+// Handler methods
+///////////////
 
 function generateSk() {
     // Warning if no window.crypto available
