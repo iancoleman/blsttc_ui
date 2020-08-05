@@ -1,3 +1,4 @@
+import base64
 import re
 import datetime
 from io import open
@@ -37,7 +38,9 @@ async function load(module, imports) {
 }
 
 async function init() {
-var input = new Uint8Array([%s]);
+var b = "";
+%s
+    var input = base64ToUint8Array(b);
     const imports = {};
 
     const { instance, module } = await load(await input, imports);
@@ -71,7 +74,7 @@ def convertWasmFile(location):
     finally:
         f.close()
     # convert wasm binary to js
-    binaryArrStr = convertBytesToArrayStr(fileBytes)
+    binaryArrStr = convertBytesToBase64Str(fileBytes)
     htmlPart = htmlPartTemplate % binaryArrStr
     # save to js file
     newLocation = location + ".html.part"
@@ -80,20 +83,19 @@ def convertWasmFile(location):
     f.close()
     print("wasm converted to html.part file: %s" % newLocation)
 
-def convertBytesToArrayStr(fileBytes):
-    ints = [str(b) for b in fileBytes]
-    # return ", ".join(ints)
+def convertBytesToBase64Str(fileBytes):
+    s = base64.b64encode(fileBytes).decode('ascii')
+    # return s
     wrapped = "\n"
-    line = ""
-    for i in ints:
-        iStr = str(i)
-        if len(iStr) + len(line) >= 79:
-            wrapped = wrapped + line + "\n"
-            line = ""
-        line = line + iStr + ","
+    line = "b+=\""
+    for i in s:
+        if len(line) >= 79:
+            wrapped = wrapped + line + "\"\n"
+            line = "b+=\""
+        line = line + str(i)
     if len(line) > 0:
         wrapped = wrapped + line
-    wrapped = wrapped + "\n"
+    wrapped = wrapped + "\"\n"
     return wrapped
 
 
