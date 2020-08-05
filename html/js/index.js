@@ -282,28 +282,34 @@ function verify() {
     DOM.verify.valid.value = valid ? "valid" : "invalid";
 }
 
+let encryptDebounce = null;
 function encrypt() {
-    // clear existing value
-    DOM.encrypt.ct.value = "";
-    // get public key hex from UI
-    let pkHex = DOM.encrypt.pkHex.value.trim();
-    if (pkHex.length != 96) {
-        // TODO show error
-        return "";
+    if (encryptDebounce != null) {
+        clearTimeout(encryptDebounce);
     }
-    // convert public key to bytes
-    let p = hexToUint8Array(pkHex);
-    // get msg from UI
-    let msg = DOM.encrypt.msg.value; // NB no trim() here
-    if (msg.length <= 0 || msg.length > 255) {
-        // TODO show error
-        return "";
-    }
-    let m = asciiToUint8Array(msg);
-    // encrypt
-    let ctBytes = encrypt_wasm(p, m);
-    let ctHex = uint8ArrayToHex(ctBytes);
-    DOM.encrypt.ct.value = ctHex;
+    encryptDebounce = setTimeout(function() {
+        // clear existing value
+        DOM.encrypt.ct.value = "";
+        // get public key hex from UI
+        let pkHex = DOM.encrypt.pkHex.value.trim();
+        if (pkHex.length != 96) {
+            // TODO show error
+            return "";
+        }
+        // convert public key to bytes
+        let p = hexToUint8Array(pkHex);
+        // get msg from UI
+        let msg = DOM.encrypt.msg.value; // NB no trim() here
+        if (msg.length <= 0 || msg.length > 255) {
+            // TODO show error
+            return "";
+        }
+        let m = asciiToUint8Array(msg);
+        // encrypt
+        let ctBytes = encrypt_wasm(p, m);
+        let ctHex = uint8ArrayToHex(ctBytes);
+        DOM.encrypt.ct.value = ctHex;
+    }, 200);
 }
 
 function decrypt() {
