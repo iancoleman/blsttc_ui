@@ -5,6 +5,7 @@ static mut SK_BYTES: [u8; 32] = [0; 32];
 static mut PK_BYTES: [u8; 48] = [0; 48];
 static mut SIG_BYTES: [u8; 96] = [0; 96];
 static mut MSG_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
+static mut CT_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
 
 #[wasm_bindgen]
 pub fn set_sk_byte(i: usize, v: u8) {
@@ -54,6 +55,18 @@ pub fn get_msg_byte(i: usize) -> u8 {
         MSG_BYTES[i]
     }
 }
+#[wasm_bindgen]
+pub fn set_ct_byte(i: usize, v: u8) {
+    unsafe {
+        CT_BYTES[i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_ct_byte(i: usize) -> u8 {
+    unsafe {
+        CT_BYTES[i]
+    }
+}
 
 #[wasm_bindgen]
 // Requires sk_bytes to be already set.
@@ -99,5 +112,53 @@ pub fn verify(msg_size: usize) -> bool {
             msg.push(MSG_BYTES[i]);
         }
         return pk.verify(&sig, msg)
+    }
+}
+
+#[wasm_bindgen]
+pub fn encrypt(msg_size: usize) -> usize {
+    unsafe {
+        // create public key vec from input parameters
+        let pk = PublicKey::from_bytes(PK_BYTES).unwrap();
+        // create msg vec from input parameters
+        let mut msg = Vec::new();
+        for i in 0..msg_size {
+            msg.push(MSG_BYTES[i]);
+        }
+        // TODO understand the use of encrypt_with_rng better and risk of using
+        // dangerous_seed and dangerous_rng here
+        let dangerous_seed = 32384702;
+        let mut dangerous_rng = CountingRng(dangerous_seed);
+        let ct = pk.encrypt_with_rng(&mut dangerous_rng, msg);
+        let ct_vec = bincode::serialize(&ct).unwrap();
+        for i in 0..ct_vec.len() {
+            CT_BYTES[i] = ct_vec[i];
+        }
+        return ct_vec.len()
+    }
+}
+
+
+// https://rust-random.github.io/rand/rand/trait.RngCore.html
+use rand_core::{RngCore, Error, impls};
+
+struct CountingRng(u64);
+
+impl RngCore for CountingRng {
+    fn next_u32(&mut self) -> u32 {
+        self.next_u64() as u32
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        self.0 += 1;
+        self.0
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        impls::fill_bytes_via_next(self, dest)
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
+        Ok(self.fill_bytes(dest))
     }
 }

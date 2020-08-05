@@ -14,6 +14,10 @@ DOM.verify.pkHex = document.querySelectorAll("#verify .pk-hex")[0];
 DOM.verify.msg = document.querySelectorAll("#verify .msg")[0];
 DOM.verify.sig = document.querySelectorAll("#verify .sig")[0];
 DOM.verify.valid = document.querySelectorAll("#verify .valid")[0];
+DOM.encrypt = {};
+DOM.encrypt.pkHex = document.querySelectorAll("#encrypt .pk-hex")[0];
+DOM.encrypt.msg = document.querySelectorAll("#encrypt .msg")[0];
+DOM.encrypt.ct = document.querySelectorAll("#encrypt .ct")[0];
 
 // threshold_crypto wasm calls
 
@@ -78,6 +82,27 @@ function verify_wasm(p, s, m) {
     return verified;
 }
 
+// p is public key uint8array
+// m is message uint8array
+function encrypt_wasm(p, m) {
+    // set public key bytes
+    for (let i=0; i<p.length; i++) {
+        wasmExports.set_pk_byte(i, p[i]);
+    }
+    // set message bytes
+    for (let i=0; i<m.length; i++) {
+        wasmExports.set_msg_byte(i, m[i]);
+    }
+    let ctSize = wasmExports.encrypt(m.length);
+    // get ciphertext bytes
+    ctBytes = [];
+    for (let i=0; i<ctSize; i++) {
+        let ctByte = wasmExports.get_ct_byte(i);
+        ctBytes.push(ctByte);
+    }
+    return ctBytes;
+}
+
 // Encoding conversions
 
 // modified from https://stackoverflow.com/a/11058858
@@ -114,6 +139,8 @@ DOM.signMsg.msg.addEventListener("input", signMsg);
 DOM.verify.pkHex.addEventListener("input", verify);
 DOM.verify.msg.addEventListener("input", verify);
 DOM.verify.sig.addEventListener("input", verify);
+DOM.encrypt.pkHex.addEventListener("input", encrypt);
+DOM.encrypt.msg.addEventListener("input", encrypt);
 
 function generateSk() {
     // Warning if no window.crypto available
@@ -215,4 +242,28 @@ function verify() {
     // verify
     let valid = verify_wasm(p, s, m);
     DOM.verify.valid.value = valid ? "valid" : "invalid";
+}
+
+function encrypt() {
+    // clear existing value
+    DOM.encrypt.ct.value = "";
+    // get public key hex from UI
+    let pkHex = DOM.encrypt.pkHex.value.trim();
+    if (pkHex.length != 96) {
+        // TODO show error
+        return "";
+    }
+    // convert public key to bytes
+    let p = hexToUint8Array(pkHex);
+    // get msg from UI
+    let msg = DOM.encrypt.msg.value; // NB no trim() here
+    if (msg.length <= 0 || msg.length > 255) {
+        // TODO show error
+        return "";
+    }
+    let m = asciiToUint8Array(msg);
+    // encrypt
+    let ctBytes = encrypt_wasm(p, m);
+    let ctHex = uint8ArrayToHex(ctBytes);
+    DOM.encrypt.ct.value = ctHex;
 }
