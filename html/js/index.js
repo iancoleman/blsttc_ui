@@ -45,44 +45,60 @@ DOM.decrypt.ct.addEventListener("input", decrypt);
 // threshold_crypto wasm calls
 ///////////////
 
+let isWasming = false;
+
 // s is secret key unit8array
 function sk_bytes_to_pk_bytes_wasm(s) {
-    // set sk bytes
-    for (let i=0; i<s.length; i++) {
-        wasmExports.set_sk_byte(i, s[i]);
-    }
-    // convert into pk bytes
-    wasmExports.derive_pk_from_sk();
-    // read pk bytes
-    let pkLen = 48; // bytes
+    isWasming = true;
     let pkBytes = [];
-    for (let i=0; i<pkLen; i++) {
-        let pkByte = wasmExports.get_pk_byte(i);
-        pkBytes.push(pkByte);
+    try {
+        // set sk bytes
+        for (let i=0; i<s.length; i++) {
+            wasmExports.set_sk_byte(i, s[i]);
+        }
+        // convert into pk bytes
+        wasmExports.derive_pk_from_sk();
+        // read pk bytes
+        let pkLen = 48; // bytes
+        for (let i=0; i<pkLen; i++) {
+            let pkByte = wasmExports.get_pk_byte(i);
+            pkBytes.push(pkByte);
+        }
     }
+    catch (e) {
+        isWasming = false;
+    }
+    isWasming = false;
     return pkBytes;
 }
 
 // s is secret key uint8array
 // m is message uint8array
 function sign_msg_wasm(s, m) {
-    // set secret key bytes
-    for (let i=0; i<s.length; i++) {
-        wasmExports.set_sk_byte(i, s[i]);
-    }
-    // set message bytes
-    for (let i=0; i<m.length; i++) {
-        wasmExports.set_msg_byte(i, m[i]);
-    }
-    // sign message
-    wasmExports.sign_msg(m.length);
-    // get signature bytes
-    let sigLen = 96; // bytes
+    isWasming = true;
     let sigBytes = [];
-    for (let i=0; i<sigLen; i++) {
-        let sigByte = wasmExports.get_sig_byte(i);
-        sigBytes.push(sigByte);
+    try {
+        // set secret key bytes
+        for (let i=0; i<s.length; i++) {
+            wasmExports.set_sk_byte(i, s[i]);
+        }
+        // set message bytes
+        for (let i=0; i<m.length; i++) {
+            wasmExports.set_msg_byte(i, m[i]);
+        }
+        // sign message
+        wasmExports.sign_msg(m.length);
+        // get signature bytes
+        let sigLen = 96; // bytes
+        for (let i=0; i<sigLen; i++) {
+            let sigByte = wasmExports.get_sig_byte(i);
+            sigBytes.push(sigByte);
+        }
     }
+    catch (e) {
+        isWasming = false;
+    }
+    isWasming = false;
     return sigBytes;
 }
 
@@ -90,67 +106,89 @@ function sign_msg_wasm(s, m) {
 // s is signature uint8array
 // m is message uint8array
 function verify_wasm(p, s, m) {
-    // set public key bytes
-    for (let i=0; i<p.length; i++) {
-        wasmExports.set_pk_byte(i, p[i]);
+    isWasming = true;
+    let verified = false;
+    try {
+        // set public key bytes
+        for (let i=0; i<p.length; i++) {
+            wasmExports.set_pk_byte(i, p[i]);
+        }
+        // set signature bytes
+        for (let i=0; i<s.length; i++) {
+            wasmExports.set_sig_byte(i, s[i]);
+        }
+        // set message bytes
+        for (let i=0; i<m.length; i++) {
+            wasmExports.set_msg_byte(i, m[i]);
+        }
+        verified = wasmExports.verify(m.length);
     }
-    // set signature bytes
-    for (let i=0; i<s.length; i++) {
-        wasmExports.set_sig_byte(i, s[i]);
+    catch (e) {
+        isWasming = false;
     }
-    // set message bytes
-    for (let i=0; i<m.length; i++) {
-        wasmExports.set_msg_byte(i, m[i]);
-    }
-    let verified = wasmExports.verify(m.length);
+    isWasming = false;
     return verified;
 }
 
 // p is public key uint8array
 // m is message uint8array
 function encrypt_wasm(p, m) {
-    // set public key bytes
-    for (let i=0; i<p.length; i++) {
-        wasmExports.set_pk_byte(i, p[i]);
+    isWasming = true;
+    let ctBytes = [];
+    try {
+        // set public key bytes
+        for (let i=0; i<p.length; i++) {
+            wasmExports.set_pk_byte(i, p[i]);
+        }
+        // set message bytes
+        for (let i=0; i<m.length; i++) {
+            wasmExports.set_msg_byte(i, m[i]);
+        }
+        // generate strong random u64 used by encrypt
+        let entropy = new Uint32Array(2);
+        window.crypto.getRandomValues(entropy);
+        let r1 = entropy[0];
+        let r2 = entropy[1];
+        // encrypt the message
+        let ctSize = wasmExports.encrypt(m.length, r1, r2);
+        // get ciphertext bytes
+        for (let i=0; i<ctSize; i++) {
+            let ctByte = wasmExports.get_ct_byte(i);
+            ctBytes.push(ctByte);
+        }
     }
-    // set message bytes
-    for (let i=0; i<m.length; i++) {
-        wasmExports.set_msg_byte(i, m[i]);
+    catch (e) {
+        isWasming = false;
     }
-    // generate strong random u64 used by encrypt
-    let entropy = new Uint32Array(2);
-    window.crypto.getRandomValues(entropy);
-    let r1 = entropy[0];
-    let r2 = entropy[1];
-    // encrypt the message
-    let ctSize = wasmExports.encrypt(m.length, r1, r2);
-    // get ciphertext bytes
-    ctBytes = [];
-    for (let i=0; i<ctSize; i++) {
-        let ctByte = wasmExports.get_ct_byte(i);
-        ctBytes.push(ctByte);
-    }
+    isWasming = false;
     return ctBytes;
 }
 
 // s is secret key uint8array
 // c is message uint8array
 function decrypt_wasm(s, c) {
-    // set secret key bytes
-    for (let i=0; i<s.length; i++) {
-        wasmExports.set_sk_byte(i, s[i]);
+    isWasming = true;
+    let msgBytes = [];
+    try {
+        // set secret key bytes
+        for (let i=0; i<s.length; i++) {
+            wasmExports.set_sk_byte(i, s[i]);
+        }
+        // set ciphertext bytes
+        for (let i=0; i<c.length; i++) {
+            wasmExports.set_ct_byte(i, c[i]);
+        }
+        let msgSize = wasmExports.decrypt(c.length);
+        // get message bytes
+        for (let i=0; i<msgSize; i++) {
+            let msgByte = wasmExports.get_msg_byte(i);
+            msgBytes.push(msgByte);
+        }
     }
-    // set ciphertext bytes
-    for (let i=0; i<c.length; i++) {
-        wasmExports.set_ct_byte(i, c[i]);
+    catch (e) {
+        isWasming = false;
     }
-    let msgSize = wasmExports.decrypt(c.length);
-    // get message bytes
-    msgBytes = [];
-    for (let i=0; i<msgSize; i++) {
-        let msgByte = wasmExports.get_msg_byte(i);
-        msgBytes.push(msgByte);
-    }
+    isWasming = false;
     return msgBytes;
 }
 
@@ -205,31 +243,51 @@ function skHexToPkHex() {
     DOM.skToPk.pkHex.value = pkHex;
 }
 
+let signDebounce = null;
 function signMsg() {
-    // clear existing value
-    DOM.signMsg.sig.value = "";
-    // get secret key hex from UI
-    let skHex = DOM.signMsg.skHex.value.trim();
-    if (skHex.length != 64) {
-        // TODO show error
-        return "";
+    // if already using wasm buffers, try again later
+    if (isWasming) {
+        setTimeout(signMsg, 200);
     }
-    // convert sk to bytes
-    let s = hexToUint8Array(skHex);
-    // get msg from UI
-    let msg = DOM.signMsg.msg.value; // NB no trim() here
-    if (msg.length <= 0 || msg.length > 255) {
-        // TODO show error
-        return "";
+    // if typing is happening quickly wait until it stops.
+    if (signDebounce != null) {
+        clearTimeout(signDebounce);
     }
-    let m = asciiToUint8Array(msg);
-    // get signature
-    let sigBytes = sign_msg_wasm(s, m);
-    let sigHex = uint8ArrayToHex(sigBytes);
-    DOM.signMsg.sig.value = sigHex;
+    setTimeout(function() {
+        // clear existing value
+        DOM.signMsg.sig.value = "";
+        // get secret key hex from UI
+        let skHex = DOM.signMsg.skHex.value.trim();
+        if (skHex.length != 64) {
+            // TODO show error
+            return "";
+        }
+        // convert sk to bytes
+        let s = hexToUint8Array(skHex);
+        // get msg from UI
+        let msg = DOM.signMsg.msg.value; // NB no trim() here
+        if (msg.length <= 0 || msg.length > 255) {
+            // TODO show error
+            return "";
+        }
+        let m = asciiToUint8Array(msg);
+        // get signature
+        let sigBytes = sign_msg_wasm(s, m);
+        let sigHex = uint8ArrayToHex(sigBytes);
+        DOM.signMsg.sig.value = sigHex;
+    }, 200);
 }
 
+let verifyDebounce = null;
 function verify() {
+    // if already using wasm buffers, try again later
+    if (isWasming) {
+        setTimeout(verify, 200);
+    }
+    // if typing is happening quickly wait until it stops.
+    if (signDebounce != null) {
+        clearTimeout(signDebounce);
+    }
     // clear existing value
     DOM.verify.valid.value = "";
     // get public key hex from UI
@@ -262,6 +320,11 @@ function verify() {
 
 let encryptDebounce = null;
 function encrypt() {
+    // if already using wasm buffers, try again later
+    if (isWasming) {
+        setTimeout(encrypt, 200);
+    }
+    // if typing is happening quickly wait until it stops.
     if (encryptDebounce != null) {
         clearTimeout(encryptDebounce);
     }
@@ -291,6 +354,10 @@ function encrypt() {
 }
 
 function decrypt() {
+    // if already using wasm buffers, try again later
+    if (isWasming) {
+        setTimeout(decrypt, 200);
+    }
     // clear existing value
     DOM.decrypt.msg.value = "";
     // get secret key hex from UI
