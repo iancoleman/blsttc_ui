@@ -3,6 +3,12 @@ body {
     margin: 20px;
 }
 
+.version {
+    position: absolute;
+    top: 0;
+    right: 15px;
+}
+
 input {
     font-family: Monospace;
     width: 100%;
