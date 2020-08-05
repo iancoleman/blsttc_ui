@@ -1,4 +1,14 @@
 ///////////////
+// Contants
+///////////////
+
+const skLen = 32; // bytes
+const pkLen = 48; // bytes
+const sigLen = 96; // bytes
+const maxMsgLen = 1049600; // bytes
+const maxCtLen = 1049600; // bytes
+
+///////////////
 // Virtual DOM
 ///////////////
 
@@ -59,7 +69,6 @@ function sk_bytes_to_pk_bytes_wasm(s) {
         // convert into pk bytes
         wasmExports.derive_pk_from_sk();
         // read pk bytes
-        let pkLen = 48; // bytes
         for (let i=0; i<pkLen; i++) {
             let pkByte = wasmExports.get_pk_byte(i);
             pkBytes.push(pkByte);
@@ -89,7 +98,6 @@ function sign_msg_wasm(s, m) {
         // sign message
         wasmExports.sign_msg(m.length);
         // get signature bytes
-        let sigLen = 96; // bytes
         for (let i=0; i<sigLen; i++) {
             let sigByte = wasmExports.get_sig_byte(i);
             sigBytes.push(sigByte);
@@ -210,7 +218,7 @@ function generateSk() {
     let max_retries = 20;
     for (let i=0; i<max_retries; i++) {
         try {
-            let entropy = new Uint8Array(32);
+            let entropy = new Uint8Array(skLen);
             window.crypto.getRandomValues(entropy);
             let h = uint8ArrayToHex(entropy);
             DOM.skToPk.skHex.value = h;
@@ -229,7 +237,7 @@ function skHexToPkHex() {
     DOM.skToPk.pkHex.value = "";
     // get secret key hex from UI
     let skHex = DOM.skToPk.skHex.value.trim();
-    if (skHex.length != 64) {
+    if (skHex.length != skLen * 2) {
         // TODO show error
         return "";
     }
@@ -258,7 +266,7 @@ function signMsg() {
         DOM.signMsg.sig.value = "";
         // get secret key hex from UI
         let skHex = DOM.signMsg.skHex.value.trim();
-        if (skHex.length != 64) {
+        if (skHex.length != skLen * 2) {
             // TODO show error
             return "";
         }
@@ -266,7 +274,7 @@ function signMsg() {
         let s = hexToUint8Array(skHex);
         // get msg from UI
         let msg = DOM.signMsg.msg.value; // NB no trim() here
-        if (msg.length <= 0 || msg.length > 255) {
+        if (msg.length <= 0 || msg.length > maxMsgLen) {
             // TODO show error
             return "";
         }
@@ -292,7 +300,7 @@ function verify() {
     DOM.verify.valid.value = "";
     // get public key hex from UI
     let pkHex = DOM.verify.pkHex.value.trim();
-    if (pkHex.length != 96) {
+    if (pkHex.length != pkLen * 2) {
         // TODO show error
         return "";
     }
@@ -308,7 +316,7 @@ function verify() {
     let s = hexToUint8Array(sigHex);
     // get msg from UI
     let msg = DOM.verify.msg.value; // NB no trim() here
-    if (msg.length <= 0 || msg.length > 255) {
+    if (msg.length <= 0 || msg.length > maxMsgLen) {
         // TODO show error
         return "";
     }
@@ -333,7 +341,7 @@ function encrypt() {
         DOM.encrypt.ct.value = "";
         // get public key hex from UI
         let pkHex = DOM.encrypt.pkHex.value.trim();
-        if (pkHex.length != 96) {
+        if (pkHex.length != pkLen * 2) {
             // TODO show error
             return "";
         }
@@ -341,7 +349,7 @@ function encrypt() {
         let p = hexToUint8Array(pkHex);
         // get msg from UI
         let msg = DOM.encrypt.msg.value; // NB no trim() here
-        if (msg.length <= 0 || msg.length > 255) {
+        if (msg.length <= 0 || msg.length > maxMsgLen) {
             // TODO show error
             return "";
         }
@@ -362,20 +370,19 @@ function decrypt() {
     DOM.decrypt.msg.value = "";
     // get secret key hex from UI
     let skHex = DOM.decrypt.skHex.value.trim();
-    if (skHex.length != 64) {
+    if (skHex.length != skLen * 2) {
         // TODO show error
         return "";
     }
     // convert secret key to bytes
     let s = hexToUint8Array(skHex);
     // get msg from UI
-    let ct = DOM.decrypt.ct.value.trim();
-    // TODO decide on max ct length
-    if (ct.length <= 0 || ct.length > 10444444) {
+    let ctHex = DOM.decrypt.ct.value.trim();
+    if (ctHex.length <= 0 || ctHex.length > maxCtLen * 2) {
         // TODO show error
         return "";
     }
-    let c = hexToUint8Array(ct);
+    let c = hexToUint8Array(ctHex);
     // decrypt
     let msgBytes = decrypt_wasm(s, c);
     let msgAscii = uint8ArrayToAscii(msgBytes);
