@@ -18,6 +18,10 @@ DOM.encrypt = {};
 DOM.encrypt.pkHex = document.querySelectorAll("#encrypt .pk-hex")[0];
 DOM.encrypt.msg = document.querySelectorAll("#encrypt .msg")[0];
 DOM.encrypt.ct = document.querySelectorAll("#encrypt .ct")[0];
+DOM.decrypt = {};
+DOM.decrypt.skHex = document.querySelectorAll("#decrypt .sk-hex")[0];
+DOM.decrypt.ct = document.querySelectorAll("#decrypt .ct")[0];
+DOM.decrypt.msg = document.querySelectorAll("#decrypt .msg")[0];
 
 // threshold_crypto wasm calls
 
@@ -103,6 +107,27 @@ function encrypt_wasm(p, m) {
     return ctBytes;
 }
 
+// s is secret key uint8array
+// c is message uint8array
+function decrypt_wasm(s, c) {
+    // set secret key bytes
+    for (let i=0; i<s.length; i++) {
+        wasmExports.set_sk_byte(i, s[i]);
+    }
+    // set ciphertext bytes
+    for (let i=0; i<c.length; i++) {
+        wasmExports.set_ct_byte(i, c[i]);
+    }
+    let msgSize = wasmExports.decrypt(c.length);
+    // get message bytes
+    msgBytes = [];
+    for (let i=0; i<msgSize; i++) {
+        let msgByte = wasmExports.get_msg_byte(i);
+        msgBytes.push(msgByte);
+    }
+    return msgBytes;
+}
+
 // Encoding conversions
 
 // modified from https://stackoverflow.com/a/11058858
@@ -112,6 +137,11 @@ function asciiToUint8Array(a) {
         b[i] = a.charCodeAt(i);
     }
     return b;
+}
+// https://stackoverflow.com/a/19102224
+// TODO resolve RangeError possibility here, see SO comments
+function uint8ArrayToAscii(a) {
+    return String.fromCharCode.apply(null, a);
 }
 // https://stackoverflow.com/a/50868276
 function hexToUint8Array(h) {
@@ -141,6 +171,8 @@ DOM.verify.msg.addEventListener("input", verify);
 DOM.verify.sig.addEventListener("input", verify);
 DOM.encrypt.pkHex.addEventListener("input", encrypt);
 DOM.encrypt.msg.addEventListener("input", encrypt);
+DOM.decrypt.skHex.addEventListener("input", decrypt);
+DOM.decrypt.ct.addEventListener("input", decrypt);
 
 function generateSk() {
     // Warning if no window.crypto available
@@ -266,4 +298,29 @@ function encrypt() {
     let ctBytes = encrypt_wasm(p, m);
     let ctHex = uint8ArrayToHex(ctBytes);
     DOM.encrypt.ct.value = ctHex;
+}
+
+function decrypt() {
+    // clear existing value
+    DOM.decrypt.msg.value = "";
+    // get secret key hex from UI
+    let skHex = DOM.decrypt.skHex.value.trim();
+    if (skHex.length != 64) {
+        // TODO show error
+        return "";
+    }
+    // convert secret key to bytes
+    let s = hexToUint8Array(skHex);
+    // get msg from UI
+    let ct = DOM.decrypt.ct.value.trim();
+    // TODO decide on max ct length
+    if (ct.length <= 0 || ct.length > 10444444) {
+        // TODO show error
+        return "";
+    }
+    let c = hexToUint8Array(ct);
+    // decrypt
+    let msgBytes = decrypt_wasm(s, c);
+    let msgAscii = uint8ArrayToAscii(msgBytes);
+    DOM.decrypt.msg.value = msgAscii;
 }

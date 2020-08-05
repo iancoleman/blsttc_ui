@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use threshold_crypto::{PublicKey, SecretKey, Signature};
+use threshold_crypto::{Ciphertext, PublicKey, SecretKey, Signature};
 
 static mut SK_BYTES: [u8; 32] = [0; 32];
 static mut PK_BYTES: [u8; 48] = [0; 48];
@@ -135,6 +135,28 @@ pub fn encrypt(msg_size: usize) -> usize {
             CT_BYTES[i] = ct_vec[i];
         }
         return ct_vec.len()
+    }
+}
+
+#[wasm_bindgen]
+pub fn decrypt(ct_size: usize) -> usize {
+    unsafe {
+        // create secret key vec from input parameters
+        let sk: SecretKey = bincode::deserialize(&SK_BYTES).unwrap();
+        // create ct vec from input parameters
+        let mut ct_vec = Vec::new();
+        for i in 0..ct_size {
+            ct_vec.push(CT_BYTES[i]);
+        }
+        let ct: Ciphertext = bincode::deserialize(&ct_vec).unwrap();
+        if !ct.verify() {
+            return 0;
+        }
+        let msg = sk.decrypt(&ct).unwrap();
+        for i in 0..msg.len() {
+            MSG_BYTES[i] = msg[i];
+        }
+        return msg.len()
     }
 }
 
