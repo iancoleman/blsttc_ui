@@ -76,6 +76,7 @@ function sk_bytes_to_pk_bytes_wasm(s) {
     }
     catch (e) {
         isWasming = false;
+        assert("Failed to generate");
     }
     isWasming = false;
     return pkBytes;
