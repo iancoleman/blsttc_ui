@@ -234,13 +234,18 @@ function generateSk() {
 }
 
 function skHexToPkHex() {
+    deriveError.hide();
     // clear existing value
     DOM.skToPk.pkHex.value = "";
     // get secret key hex from UI
     let skHex = DOM.skToPk.skHex.value.trim();
+    if (skHex.length == 0) {
+        return;
+    }
     if (skHex.length != skLen * 2) {
-        // TODO show error
-        return "";
+        let errMsg = skErrMsg(skHex.length);
+        deriveError.show(errMsg);
+        return;
     }
     // convert sk to bytes
     let b = hexToUint8Array(skHex);
@@ -254,9 +259,11 @@ function skHexToPkHex() {
 
 let signDebounce = null;
 function signMsg() {
+    signError.hide();
     // if already using wasm buffers, try again later
     if (isWasming) {
         setTimeout(signMsg, 200);
+        return;
     }
     // if typing is happening quickly wait until it stops.
     if (signDebounce != null) {
@@ -267,17 +274,25 @@ function signMsg() {
         DOM.signMsg.sig.value = "";
         // get secret key hex from UI
         let skHex = DOM.signMsg.skHex.value.trim();
+        if (skHex.length == 0) {
+            return;
+        }
         if (skHex.length != skLen * 2) {
-            // TODO show error
-            return "";
+            let errMsg = skErrMsg(skHex.length);
+            signError.show(errMsg);
+            return;
         }
         // convert sk to bytes
         let s = hexToUint8Array(skHex);
         // get msg from UI
         let msg = DOM.signMsg.msg.value; // NB no trim() here
-        if (msg.length <= 0 || msg.length > maxMsgLen) {
-            // TODO show error
-            return "";
+        if (msg.length <= 0) {
+            return
+        }
+        if (msg.length > maxMsgLen) {
+            let errMsg = msgErrMsg(msg.length);
+            signError.show(errMsg);
+            return;
         }
         let m = asciiToUint8Array(msg);
         // get signature
@@ -289,9 +304,11 @@ function signMsg() {
 
 let verifyDebounce = null;
 function verify() {
+    verifyError.hide();
     // if already using wasm buffers, try again later
     if (isWasming) {
         setTimeout(verify, 200);
+        return;
     }
     // if typing is happening quickly wait until it stops.
     if (signDebounce != null) {
@@ -301,25 +318,37 @@ function verify() {
     DOM.verify.valid.value = "";
     // get public key hex from UI
     let pkHex = DOM.verify.pkHex.value.trim();
+    if (pkHex.length == 0) {
+        return;
+    }
     if (pkHex.length != pkLen * 2) {
-        // TODO show error
-        return "";
+        let errMsg = pkErrMsg(pkHex.length);
+        verifyError.show(errMsg);
+        return;
     }
     // convert public key to bytes
     let p = hexToUint8Array(pkHex);
     // get signature hex from UI
     let sigHex = DOM.verify.sig.value.trim();
+    if (sigHex.length == 0) {
+        return;
+    }
     if (sigHex.length != 192) {
-        // TODO show error
-        return "";
+        let errMsg = sigErrMsg(sigHex.length);
+        verifyError.show(errMsg);
+        return;
     }
     // convert signature to bytes
     let s = hexToUint8Array(sigHex);
     // get msg from UI
     let msg = DOM.verify.msg.value; // NB no trim() here
-    if (msg.length <= 0 || msg.length > maxMsgLen) {
-        // TODO show error
-        return "";
+    if (msg.length == 0) {
+        return;
+    }
+    if (msg.length > maxMsgLen) {
+        let errMsg = msgErrMsg(msg.length);
+        verifyError.show(errMsg);
+        return;
     }
     let m = asciiToUint8Array(msg);
     // verify
@@ -329,9 +358,11 @@ function verify() {
 
 let encryptDebounce = null;
 function encrypt() {
+    encryptError.hide();
     // if already using wasm buffers, try again later
     if (isWasming) {
         setTimeout(encrypt, 200);
+        return;
     }
     // if typing is happening quickly wait until it stops.
     if (encryptDebounce != null) {
@@ -342,17 +373,25 @@ function encrypt() {
         DOM.encrypt.ct.value = "";
         // get public key hex from UI
         let pkHex = DOM.encrypt.pkHex.value.trim();
+        if (pkHex.length == 0) {
+            return;
+        }
         if (pkHex.length != pkLen * 2) {
-            // TODO show error
-            return "";
+            let errMsg = pkErrMsg(pkHex.length);
+            encryptError.show(errMsg);
+            return;
         }
         // convert public key to bytes
         let p = hexToUint8Array(pkHex);
         // get msg from UI
         let msg = DOM.encrypt.msg.value; // NB no trim() here
-        if (msg.length <= 0 || msg.length > maxMsgLen) {
-            // TODO show error
-            return "";
+        if (msg.length == 0) {
+            return;
+        }
+        if (msg.length > maxMsgLen) {
+            let errMsg = msgErrMsg(msg.length);
+            encryptError.show(errMsg);
+            return;
         }
         let m = asciiToUint8Array(msg);
         // encrypt
@@ -363,25 +402,35 @@ function encrypt() {
 }
 
 function decrypt() {
+    decryptError.hide();
     // if already using wasm buffers, try again later
     if (isWasming) {
         setTimeout(decrypt, 200);
+        return;
     }
     // clear existing value
     DOM.decrypt.msg.value = "";
     // get secret key hex from UI
     let skHex = DOM.decrypt.skHex.value.trim();
+    if (skHex.length == 0) {
+        return;
+    }
     if (skHex.length != skLen * 2) {
-        // TODO show error
-        return "";
+        let errMsg = skErrMsg(skHex.length);
+        decryptError.show(errMsg);
+        return;
     }
     // convert secret key to bytes
     let s = hexToUint8Array(skHex);
     // get msg from UI
     let ctHex = DOM.decrypt.ct.value.trim();
-    if (ctHex.length <= 0 || ctHex.length > maxCtLen * 2) {
-        // TODO show error
-        return "";
+    if (ctHex.length == 0) {
+        return;
+    }
+    if (ctHex.length > maxCtLen * 2) {
+        let errMsg = ctErrMsg(ctHex.length);
+        decryptError.show(errMsg);
+        return;
     }
     let c = hexToUint8Array(ctHex);
     // decrypt

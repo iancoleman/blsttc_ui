@@ -28,3 +28,7 @@ hr {
 #info {
     max-width: 600px;
 }
+
+.hidden {
+    display: none;
+}
