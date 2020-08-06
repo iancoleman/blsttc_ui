@@ -235,6 +235,11 @@ function generateSk() {
 
 function skHexToPkHex() {
     deriveError.hide();
+    // if already using wasm buffers, try again later
+    if (isWasming) {
+        setTimeout(skHexToPkHex, 200);
+        return;
+    }
     // clear existing value
     DOM.skToPk.pkHex.value = "";
     // get secret key hex from UI
@@ -269,7 +274,7 @@ function signMsg() {
     if (signDebounce != null) {
         clearTimeout(signDebounce);
     }
-    setTimeout(function() {
+    signDebounce = setTimeout(function() {
         // clear existing value
         DOM.signMsg.sig.value = "";
         // get secret key hex from UI
@@ -311,49 +316,51 @@ function verify() {
         return;
     }
     // if typing is happening quickly wait until it stops.
-    if (signDebounce != null) {
-        clearTimeout(signDebounce);
+    if (verifyDebounce != null) {
+        clearTimeout(verifyDebounce);
     }
-    // clear existing value
-    DOM.verify.valid.value = "";
-    // get public key hex from UI
-    let pkHex = DOM.verify.pkHex.value.trim();
-    if (pkHex.length == 0) {
-        return;
-    }
-    if (pkHex.length != pkLen * 2) {
-        let errMsg = pkErrMsg(pkHex.length);
-        verifyError.show(errMsg);
-        return;
-    }
-    // convert public key to bytes
-    let p = hexToUint8Array(pkHex);
-    // get signature hex from UI
-    let sigHex = DOM.verify.sig.value.trim();
-    if (sigHex.length == 0) {
-        return;
-    }
-    if (sigHex.length != 192) {
-        let errMsg = sigErrMsg(sigHex.length);
-        verifyError.show(errMsg);
-        return;
-    }
-    // convert signature to bytes
-    let s = hexToUint8Array(sigHex);
-    // get msg from UI
-    let msg = DOM.verify.msg.value; // NB no trim() here
-    if (msg.length == 0) {
-        return;
-    }
-    if (msg.length > maxMsgLen) {
-        let errMsg = msgErrMsg(msg.length);
-        verifyError.show(errMsg);
-        return;
-    }
-    let m = asciiToUint8Array(msg);
-    // verify
-    let valid = verify_wasm(p, s, m);
-    DOM.verify.valid.value = valid ? "valid" : "invalid";
+    verifyDebounce = setTimeout(function() {
+        // clear existing value
+        DOM.verify.valid.value = "";
+        // get public key hex from UI
+        let pkHex = DOM.verify.pkHex.value.trim();
+        if (pkHex.length == 0) {
+            return;
+        }
+        if (pkHex.length != pkLen * 2) {
+            let errMsg = pkErrMsg(pkHex.length);
+            verifyError.show(errMsg);
+            return;
+        }
+        // convert public key to bytes
+        let p = hexToUint8Array(pkHex);
+        // get signature hex from UI
+        let sigHex = DOM.verify.sig.value.trim();
+        if (sigHex.length == 0) {
+            return;
+        }
+        if (sigHex.length != 192) {
+            let errMsg = sigErrMsg(sigHex.length);
+            verifyError.show(errMsg);
+            return;
+        }
+        // convert signature to bytes
+        let s = hexToUint8Array(sigHex);
+        // get msg from UI
+        let msg = DOM.verify.msg.value; // NB no trim() here
+        if (msg.length == 0) {
+            return;
+        }
+        if (msg.length > maxMsgLen) {
+            let errMsg = msgErrMsg(msg.length);
+            verifyError.show(errMsg);
+            return;
+        }
+        let m = asciiToUint8Array(msg);
+        // verify
+        let valid = verify_wasm(p, s, m);
+        DOM.verify.valid.value = valid ? "valid" : "invalid";
+    }, 200);
 }
 
 let encryptDebounce = null;
