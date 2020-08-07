@@ -6,7 +6,18 @@ static mut PK_BYTES: [u8; 48] = [0; 48];
 static mut SIG_BYTES: [u8; 96] = [0; 96];
 static mut MSG_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
 static mut CT_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
+// rng.next() is called 4 times during encrypt, so use these values
+// instead of trying to use OsRng. Since javascript can only set u32
+// use 2 of these for every call to rng.next()
+static mut RNG_VALUES: [u32; 8] = [0; 8];
+static mut RNG_INDEX: usize = 0;
 
+#[wasm_bindgen]
+pub fn set_rng_value(i: usize, v: u32) {
+    unsafe {
+        RNG_VALUES[i] = v;
+    }
+}
 #[wasm_bindgen]
 pub fn set_sk_byte(i: usize, v: u8) {
     unsafe {
@@ -169,10 +180,16 @@ impl RngCore for CountingRng {
         self.next_u64() as u32
     }
 
-    // TODO understand risk of using this in encrypt()
     fn next_u64(&mut self) -> u64 {
-        self.0 += 1;
-        self.0
+        unsafe {
+            let mut rng_value: u64 = 0;
+            rng_value = rng_value + u64::from(RNG_VALUES[RNG_INDEX]);
+            rng_value = rng_value << 32;
+            rng_value = rng_value + u64::from(RNG_VALUES[RNG_INDEX+1]);
+            self.0 = rng_value;
+            RNG_INDEX = (RNG_INDEX + 2) % RNG_VALUES.len();
+            self.0
+        }
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {

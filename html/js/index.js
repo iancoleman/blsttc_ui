@@ -145,6 +145,15 @@ function encrypt_wasm(p, m) {
     isWasming = true;
     let ctBytes = [];
     try {
+        // set rng values
+        // encrypt calls rng.next 4 times, so that's 4 rng values
+        // with each value being a u64 so 2xu32, so 8 values are
+        // generated here.
+        let rngValues = new Uint32Array(8);
+        window.crypto.getRandomValues(rngValues);
+        for (let i=0; i<rngValues.length; i++) {
+            wasmExports.set_rng_value(i, rngValues[i]);
+        }
         // set public key bytes
         for (let i=0; i<p.length; i++) {
             wasmExports.set_pk_byte(i, p[i]);
