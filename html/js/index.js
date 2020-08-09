@@ -34,6 +34,15 @@ DOM.decrypt = {};
 DOM.decrypt.skHex = document.querySelectorAll("#decrypt .sk-hex")[0];
 DOM.decrypt.ct = document.querySelectorAll("#decrypt .ct")[0];
 DOM.decrypt.msg = document.querySelectorAll("#decrypt .msg")[0];
+DOM.stk = {}; // simple threshold keys
+DOM.stk.generate = document.querySelectorAll("#simple-threshold-keys .generate")[0];
+DOM.stk.threshold = document.querySelectorAll("#simple-threshold-keys .threshold")[0];
+DOM.stk.polyHex = document.querySelectorAll("#simple-threshold-keys .poly-hex")[0];
+DOM.stk.mskHex = document.querySelectorAll("#simple-threshold-keys .msk-hex")[0];
+DOM.stk.mpkHex = document.querySelectorAll("#simple-threshold-keys .mpk-hex")[0];
+DOM.stk.totalKeys = document.querySelectorAll("#simple-threshold-keys .total-keys")[0];
+DOM.stk.skset = document.querySelectorAll("#simple-threshold-keys .skset")[0];
+DOM.stk.pkset = document.querySelectorAll("#simple-threshold-keys .pkset")[0];
 
 ///////////////
 // Event handlers
@@ -50,6 +59,9 @@ DOM.encrypt.pkHex.addEventListener("input", encrypt);
 DOM.encrypt.msg.addEventListener("input", encrypt);
 DOM.decrypt.skHex.addEventListener("input", decrypt);
 DOM.decrypt.ct.addEventListener("input", decrypt);
+DOM.stk.generate.addEventListener("click", generatePoly);
+DOM.stk.polyHex.addEventListener("input", deriveStk);
+DOM.stk.totalKeys.addEventListener("input", deriveStk);
 
 ///////////////
 // threshold_crypto wasm calls
@@ -139,21 +151,22 @@ function verify_wasm(p, s, m) {
     return verified;
 }
 
+function set_rng_values_wasm() {
+    let RNG_VALUES_SIZE = 200;
+    let rngValues = new Uint32Array(RNG_VALUES_SIZE);
+    window.crypto.getRandomValues(rngValues);
+    for (let i=0; i<rngValues.length; i++) {
+        wasmExports.set_rng_value(i, rngValues[i]);
+    }
+}
+
 // p is public key uint8array
 // m is message uint8array
 function encrypt_wasm(p, m) {
     isWasming = true;
     let ctBytes = [];
     try {
-        // set rng values
-        // encrypt calls rng.next 4 times, so that's 4 rng values
-        // with each value being a u64 so 2xu32, so 8 values are
-        // generated here.
-        let rngValues = new Uint32Array(8);
-        window.crypto.getRandomValues(rngValues);
-        for (let i=0; i<rngValues.length; i++) {
-            wasmExports.set_rng_value(i, rngValues[i]);
-        }
+        set_rng_values_wasm();
         // set public key bytes
         for (let i=0; i<p.length; i++) {
             wasmExports.set_pk_byte(i, p[i]);
@@ -208,6 +221,57 @@ function decrypt_wasm(s, c) {
     }
     isWasming = false;
     return msgBytes;
+}
+
+function generate_poly_wasm(threshold) {
+    set_rng_values_wasm();
+    let entropy = new Uint32Array(2);
+    window.crypto.getRandomValues(entropy);
+    let r1 = entropy[0];
+    let r2 = entropy[1];
+    let polySize = wasmExports.generate_poly(threshold, r1, r2);
+    let polyBytes = [];
+    for (let i=0; i<polySize; i++) {
+        let polyByte = wasmExports.get_poly_byte(i);
+        polyBytes.push(polyByte);
+    }
+    return polyBytes;
+}
+
+function get_msk_bytes_wasm() {
+    let mskBytes = [];
+    for (let i=0; i<skLen; i++) {
+        let mskByte = wasmExports.get_msk_byte(i);
+        mskBytes.push(mskByte);
+    }
+    return mskBytes;
+}
+
+function get_mpk_bytes_wasm() {
+    let mpkBytes = [];
+    for (let i=0; i<pkLen; i++) {
+        let mpkByte = wasmExports.get_mpk_byte(i);
+        mpkBytes.push(mpkByte);
+    }
+    return mpkBytes;
+}
+
+function get_skshare_wasm() {
+    let skshareBytes = [];
+    for (let i=0; i<skLen; i++) {
+        let skshareByte = wasmExports.get_skshare_byte(i);
+        skshareBytes.push(skshareByte);
+    }
+    return skshareBytes;
+}
+
+function get_pkshare_wasm() {
+    let pkshareBytes = [];
+    for (let i=0; i<pkLen; i++) {
+        let pkshareByte = wasmExports.get_pkshare_byte(i);
+        pkshareBytes.push(pkshareByte);
+    }
+    return pkshareBytes;
 }
 
 ///////////////
@@ -453,4 +517,52 @@ function decrypt() {
     let msgBytes = decrypt_wasm(s, c);
     let msgAscii = uint8ArrayToAscii(msgBytes);
     DOM.decrypt.msg.value = msgAscii;
+}
+
+function generatePoly() {
+    let threshold = parseInt(DOM.stk.threshold.value);
+    let polyBytes = generate_poly_wasm(threshold);
+    let polyHex = uint8ArrayToHex(polyBytes);
+    DOM.stk.polyHex.value = polyHex;
+    deriveStk();
+}
+
+function deriveStk() {
+    // set poly in wasm
+    let polyHex = DOM.stk.polyHex.value;
+    let polyBytes = hexToUint8Array(polyHex);
+    for (let i=0; i<polyBytes.length; i++) {
+        let v = polyBytes[i];
+        wasmExports.set_poly_byte(i, v);
+    }
+    // get threshold
+    let threshold = wasmExports.get_poly_degree();
+    DOM.stk.threshold.value = threshold;
+    // derive master keys, ie index 0
+    let mkIndex = 0;
+    wasmExports.derive_master_key();
+    // show master secret key
+    let mskBytes = get_msk_bytes_wasm();
+    let mskHex = uint8ArrayToHex(mskBytes);
+    DOM.stk.mskHex.value = mskHex;
+    // show master public key
+    let mpkBytes = get_mpk_bytes_wasm();
+    let mpkHex = uint8ArrayToHex(mpkBytes);
+    DOM.stk.mpkHex.value = mpkHex;
+    // derive keys, ie index 1 to N
+    let n = parseInt(DOM.stk.totalKeys.value);
+    let skshares = "";
+    let pkshares = "";
+    for (let i=0; i<n; i++) {
+        wasmExports.derive_key_share(i);
+        let skshareBytes = get_skshare_wasm();
+        let skshareHex = uint8ArrayToHex(skshareBytes);
+        skshares += skshareHex + "\n";
+        // show master public key
+        let pkshareBytes = get_pkshare_wasm();
+        let pkshareHex = uint8ArrayToHex(pkshareBytes);
+        pkshares += pkshareHex + "\n";
+    }
+    DOM.stk.skset.value = skshares.trim();
+    DOM.stk.pkset.value = pkshares.trim();
 }

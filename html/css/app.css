@@ -9,12 +9,21 @@ body {
     right: 15px;
 }
 
-input {
+input,
+textarea {
     font-family: Monospace;
     width: 100%;
     border: 2px solid #dadada;
     border-radius: 7px;
     padding: 8px;
+}
+
+textarea {
+    height: 150px;
+}
+
+input[type="number"] {
+    width: 40px;
 }
 
 .text-red {

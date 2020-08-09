@@ -1,16 +1,25 @@
 use wasm_bindgen::prelude::*;
-use threshold_crypto::{Ciphertext, PublicKey, SecretKey, Signature};
+use threshold_crypto::{Ciphertext, poly::Poly, PublicKey, SecretKey, serde_impl::SerdeSecret, SecretKeySet, Signature};
 
 static mut SK_BYTES: [u8; 32] = [0; 32];
 static mut PK_BYTES: [u8; 48] = [0; 48];
 static mut SIG_BYTES: [u8; 96] = [0; 96];
 static mut MSG_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
 static mut CT_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
-// rng.next() is called 4 times during encrypt, so use these values
-// instead of trying to use OsRng. Since javascript can only set u32
-// use 2 of these for every call to rng.next()
-static mut RNG_VALUES: [u32; 8] = [0; 8];
+// rng.next() is called 4 times during encrypt
+// rng.next() is called up to 48 times during Poly::random(10, rng)
+// so use these values instead of trying to use OsRng. Since javascript can
+// only set u32 use 2 of these for every call to rng.next()
+static mut RNG_VALUES: [u32; 200] = [0; 200];
 static mut RNG_INDEX: usize = 0;
+static mut RNG_NEXT_COUNT: usize = 0;
+// Poly which can be converted into SecretKeySet
+// Threshold of 10 gives size of 360 bytes when serialized
+static mut POLY_BYTES: [u8; 360] = [0; 360];
+static mut MSK_BYTES: [u8; 32] = [0; 32];
+static mut MPK_BYTES: [u8; 48] = [0; 48];
+static mut SKSHARE_BYTES: [u8; 32] = [0; 32];
+static mut PKSHARE_BYTES: [u8; 48] = [0; 48];
 
 #[wasm_bindgen]
 pub fn set_rng_value(i: usize, v: u32) {
@@ -76,6 +85,66 @@ pub fn set_ct_byte(i: usize, v: u8) {
 pub fn get_ct_byte(i: usize) -> u8 {
     unsafe {
         CT_BYTES[i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_poly_byte(i: usize, v: u8) {
+    unsafe {
+        POLY_BYTES[i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_poly_byte(i: usize) -> u8 {
+    unsafe {
+        POLY_BYTES[i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_msk_byte(i: usize, v: u8) {
+    unsafe {
+        MSK_BYTES[i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_msk_byte(i: usize) -> u8 {
+    unsafe {
+        MSK_BYTES[i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_mpk_byte(i: usize, v: u8) {
+    unsafe {
+        MPK_BYTES[i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_mpk_byte(i: usize) -> u8 {
+    unsafe {
+        MPK_BYTES[i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_skshare_byte(i: usize, v: u8) {
+    unsafe {
+        SKSHARE_BYTES[i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_skshare_byte(i: usize) -> u8 {
+    unsafe {
+        SKSHARE_BYTES[i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_pkshare_byte(i: usize, v: u8) {
+    unsafe {
+        PKSHARE_BYTES[i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_pkshare_byte(i: usize) -> u8 {
+    unsafe {
+        PKSHARE_BYTES[i]
     }
 }
 
@@ -169,6 +238,90 @@ pub fn decrypt(ct_size: usize) -> usize {
     }
 }
 
+//#[wasm_bindgen]
+//pub fn derive_pmk_from_sks() {
+//    unsafe {
+//        let sks: SecretKeySet = bincode::deserialize(&POLY_BYTES).unwrap();
+//        let pmk_vec = sks.public_keys().public_key().to_bytes().to_vec();
+//        for i in 0..pmk_vec.len() {
+//            PMK_BYTES[i] = pmk_vec[i];
+//        }
+//    }
+//}
+
+#[wasm_bindgen]
+pub fn generate_poly(threshold: usize, seed1: u64, seed2: u64) -> usize {
+    unsafe {
+        let seed: u64 = seed1 << 32 + seed2;
+        let mut rng = CountingRng(seed);
+        let poly = Poly::random(threshold, &mut rng);
+        let poly_vec = bincode::serialize(&poly).unwrap();
+        for i in 0..poly_vec.len() {
+            POLY_BYTES[i] = poly_vec[i];
+        }
+        return poly_vec.len()
+    }
+}
+
+#[wasm_bindgen]
+pub fn get_poly_degree() -> usize {
+    unsafe {
+        let poly: Poly = bincode::deserialize(&POLY_BYTES).unwrap();
+        poly.degree()
+    }
+}
+
+#[wasm_bindgen]
+pub fn derive_master_key() {
+    unsafe {
+        let poly: Poly = bincode::deserialize(&POLY_BYTES).unwrap();
+        // see https://github.com/poanetwork/threshold_crypto/blob/7709462f2df487ada3bb3243060504b5881f2628/src/lib.rs#L685
+        let mut fr = poly.evaluate(0);
+        let msk = SecretKey::from_mut(&mut fr);
+        let msk_vec = bincode::serialize(&SerdeSecret(&msk)).unwrap();
+        for i in 0..msk_vec.len() {
+            MSK_BYTES[i] = msk_vec[i];
+        }
+        //// public key
+        // could also use let mpk = msk.public_key();
+        let skset: SecretKeySet = SecretKeySet::from(poly);
+        let pkset = skset.public_keys();
+        let mpk = pkset.public_key();
+        let mpk_vec = mpk.to_bytes().to_vec();
+        for i in 0..mpk_vec.len() {
+            MPK_BYTES[i] = mpk_vec[i];
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub fn derive_key_share(i: usize) {
+    unsafe {
+        let poly: Poly = bincode::deserialize(&POLY_BYTES).unwrap();
+        // secret key
+        let skset: SecretKeySet = SecretKeySet::from(poly);
+        let skshare = skset.secret_key_share(i);
+        let skshare_vec = bincode::serialize(&SerdeSecret(&skshare)).unwrap();
+        for i in 0..skshare_vec.len() {
+            SKSHARE_BYTES[i] = skshare_vec[i];
+        }
+        // public key
+        let pkset = skset.public_keys();
+        let pkshare = pkset.public_key_share(i);
+        let pkshare_vec = pkshare.to_bytes().to_vec();
+        for i in 0..pkshare_vec.len() {
+            PKSHARE_BYTES[i] = pkshare_vec[i];
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub fn get_rng_next_count() -> usize {
+    unsafe {
+        RNG_NEXT_COUNT
+    }
+}
+
 
 // https://rust-random.github.io/rand/rand/trait.RngCore.html
 use rand_core::{RngCore, Error, impls};
@@ -188,6 +341,7 @@ impl RngCore for CountingRng {
             rng_value = rng_value + u64::from(RNG_VALUES[RNG_INDEX+1]);
             self.0 = rng_value;
             RNG_INDEX = (RNG_INDEX + 2) % RNG_VALUES.len();
+            RNG_NEXT_COUNT = RNG_NEXT_COUNT + 1;
             self.0
         }
     }

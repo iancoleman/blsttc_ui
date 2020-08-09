@@ -163,6 +163,65 @@
 
     <hr>
 
+    <div id="simple-threshold-keys">
+
+        <h2>Simple Threshold Keys</h2>
+
+        <p>
+        This type of key generation is useful when one person is in control
+        of all aspects of the keys, eg a multisig wallet.
+        </p>
+
+        <p>
+        Input: Poly Hex (as per bincode serialization), or
+        <button class="generate">generate</button> a random poly with threshold
+        <input class="threshold" value="3" type="number" min="2" max="10">
+        (this is the m in m-of-n). Minimum 2, maximum 10. Make a secure backup
+        of poly if you want to derive key shares in the future.
+        </p>
+        <input class="poly-hex" placeholder="eg 7b4ecc...">
+
+        <p>
+        Output: Master Secret Key Hex, 48 bytes ie 96 hex chars.
+        Never used for anything and should never be shared, just shown here
+        for information.
+        </p>
+        <input class="msk-hex" placeholder="eg 39f3bb0...">
+
+        <p>
+        Output: Master Public Key Hex, 48 bytes ie 96 hex chars.
+        This is used to verify a combined signature.
+        A group of people will each individually sign a message, then those
+        signatures will be aggregated to produce a combined signature which
+        can be verified with this master public key.
+        </p>
+        <input class="mpk-hex" placeholder="eg a32fc9...">
+
+        <p>
+        Show
+        <input class="total-keys" value="7" type="number" min="2" max="10">
+        key shares (this is the n in m-of-n).
+        </p>
+
+        <p>
+        Output: Secret Key Shares.
+        Each line is a secret key.
+        </p>
+        <textarea class="skset"></textarea>
+
+        <p>
+        Output: Public Key Shares.
+        Each line is the public key corresponding to the secret key on each
+        line above.
+        </p>
+        <textarea class="pkset"></textarea>
+
+        <p class="error text-red hidden"></p>
+
+    </div>
+
+    <hr>
+
     <div id="thresh-sig">
 
         <h2>Sign Group Message</h2>
