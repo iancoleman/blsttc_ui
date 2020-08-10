@@ -152,6 +152,11 @@ function verify_wasm(p, s, m) {
 }
 
 function set_rng_values_wasm() {
+    // Warning if no window.crypto available
+    if (!window.crypto) {
+        alert("Secure randomness not available in this browser, output is insecure.");
+        return
+    }
     let RNG_VALUES_SIZE = 200;
     let rngValues = new Uint32Array(RNG_VALUES_SIZE);
     window.crypto.getRandomValues(rngValues);
@@ -279,11 +284,6 @@ function get_pkshare_wasm() {
 ///////////////
 
 function generateSk() {
-    // Warning if no window.crypto available
-    if (!window.crypto) {
-        alert("Secure randomness not available in this browser.");
-        return
-    }
     // Clear existing values
     DOM.skToPk.skHex.value = "";
     DOM.skToPk.pkHex.value = "";
