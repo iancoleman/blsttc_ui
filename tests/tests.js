@@ -120,6 +120,70 @@ let tests = [
         });
     },
 
+    function() {
+        let name = "Poly is converted to master keys and key sets";
+        let d = testData[2];
+        DOM.stk.polyHex.value = d.poly;
+        DOM.stk.polyHex.dispatchEvent(inputEvt);
+        if(DOM.stk.mskHex.value != d.msk) {
+            throw(name + ": poly converted to incorrect master secret key");
+        }
+        if(DOM.stk.mpkHex.value != d.mpk) {
+            throw(name + ": poly converted to incorrect master public key");
+        }
+        let secretKeys = DOM.stk.skset.value.split("\n");
+        if (secretKeys.length != d.sks.length) {
+            throw(name + ": expected " +  d.sks.length + " keys, got " + secretKeys.length);
+        }
+        for (let i=0; i<secretKeys.length; i++) {
+            if (secretKeys[i] != d.sks[i]) {
+                throw(name + " secret key " + i + " did not match");
+            }
+        }
+        let publicKeys = DOM.stk.pkset.value.split("\n");
+        if (publicKeys.length != d.pks.length) {
+            throw(name + ": expected " +  d.pks.length + " keys, got " + publicKeys.length);
+        }
+        for (let i=0; i<publicKeys.length; i++) {
+            if (publicKeys[i] != d.pks[i]) {
+                throw(name + " public key " + i + " did not match");
+            }
+        }
+        next();
+    },
+
+    function() {
+        let name = "Poly can be randomly generated";
+        DOM.stk.generate.dispatchEvent(clickEvt);
+        if (DOM.stk.polyHex.value.length == 0) {
+            throw(name + ": poly length zero when clicking generate");
+        }
+        if (DOM.stk.mskHex.value.length == 0) {
+            throw(name + ": master secret key length zero when clicking generate");
+        }
+        if (DOM.stk.mpkHex.value.length == 0) {
+            throw(name + ": master public key length zero when clicking generate");
+        }
+        if (DOM.stk.skset.value.length == 0) {
+            throw(name + ": secret key set length zero when clicking generate");
+        }
+        if (DOM.stk.pkset.value.length == 0) {
+            throw(name + ": public key set length zero when clicking generate");
+        }
+        next();
+    }
+
+    // TODO less urgent tests:
+    // Changing threshold changes poly
+    // Changing total-keys shows correct number of keys
+    // Cannot set n to be less than m
+    // Cannot set m to be more than n
+    // m cannot be less than 2
+    // m cannot be more than 10
+    // n cannot be less than 2
+    // n cannot be more than 10
+    // master secret key can be used in ui derive public key from secret key
+
 ];
 
 let clickEvt = new Event("click");
@@ -137,7 +201,33 @@ let testData = [
     },
     {
         "sk": "8c4a86586c9a4efdf713a67aa78ea31a2adc060f99307a21cd17029e50cb6422",
-    }
+    },
+    {
+        // generated from threshold_crypto test
+        // https://github.com/poanetwork/threshold_crypto/blob/7709462f2df487ada3bb3243060504b5881f2628/src/lib.rs#L823
+        "poly": "04000000000000008f142a30152b6830f6a1cdd0dc41894b84f07a9ae26d74492c74539521a5455ba9daecbc962c91cf99b09c16876921538c8ad3dfe1da01295ea1e4fb93ea6f3281aeb52ce7b67895be84d1ad8b538a063d93f23d2527f1d9ad988c9ebdf24e07a7b1dd479ebf3eb04f6354f87e2cc718490a03d95686147de4af77d10fc2744a",
+        "threshold": 3,
+        "msk": "8f142a30152b6830f6a1cdd0dc41894b84f07a9ae26d74492c74539521a5455b",
+        "mpk": "9727732a79858e28f06303129e589bf7b7c5e54070e500e122dd895afb67091c9c53750f933c4d0b14d8d28626f96031",
+        "sks": [
+            "5f4faa6132ceb0459fde918d6b873e6a9140a287381e4296d4e09ed72f9d8b6b",
+            "1611c89bd85c63a7a8acfb77fc4aff87b4bc97d6b90a4c85ca2bbe6f78c28705",
+            "9c83b58dbf54f876f2a70862834ffb9199f2298a5fa9999ed87944f3b3521b00",
+            "d7d0a4e6a033e8d55eb4b91dee0fe7cde1bfe39112c0be0339f589a4f43c4c4a",
+            "ac22c8553777abe5d059117d2763b92d292aaed3b33c15a3dd4a499cf9c8325f",
+            "01a3518a3c9dbac72a7c10521dc426f7100f143f2ce5309e00a5da1cd5e5d42d",
+            "bd7b733369238e9d4d5bb66ec051a1c33f2442cd6c57df4924ab3392ec292619",
+        ],
+        "pks": [
+            "8d4768421ae667f4b9d2682043b5ed2d558f579a0760f5a914ee29e5eb1f242cda5ae2a94d3458ef8812656abab3aeae",
+            "a4943326e90bc64046c802072267388906e7bdddd4945e507cc6b7d9371c53689ddaa1cf9fabc15654facf10cdcbff4c",
+            "a7d380921170560295827a732d262333f621d76e0f27ba35dfb2eabcb3f74f36236a82283e42b8377ceb915974dc0abb",
+            "89387fac31f4d852381b55a8af11db64efb788e0de29c26cb1e08c88c3d2016ab446af5c196fe52f848745a45ea18517",
+            "86090d8dc19d88f0621adf1d97ddcc873ad49296d741b10cb8370b31d5cff0334190b1eeb4873faff61fbdad7802ef92",
+            "ac9bc16eb85402eadcd65110e4e6837c46a60d386e085a68eef4c093314ddb19195099f9f3067beecf2b9404122975b6",
+            "85c747db393bbe62f0182e2c65aad184b6836bbd7bac1548c892a0ac4181b31fd899c2d5eb07d0a94739d9bd61ef6145",
+        ],
+    },
 ];
 
 let initialValue = null;
