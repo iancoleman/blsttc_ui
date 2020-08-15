@@ -10,7 +10,8 @@ body {
 }
 
 input,
-textarea {
+textarea,
+div[contenteditable="true"] {
     font-family: Monospace;
     width: 100%;
     border: 2px solid #dadada;
@@ -18,12 +19,22 @@ textarea {
     padding: 8px;
 }
 
-textarea {
+textarea,
+div[contenteditable="true"] {
     height: 150px;
 }
 
 input[type="number"] {
     width: 40px;
+}
+
+.text-bold {
+    font-weight: bold;
+}
+
+.text-fade {
+    color: #DDD;
+    background-color: rgba(0,0,0,0)!important;
 }
 
 .text-red {
@@ -40,4 +51,15 @@ hr {
 
 .hidden {
     display: none;
+}
+
+table.shares,
+table.shares tr,
+table.shares td {
+    border-collapse: collapse;
+}
+table.shares td {
+    padding: 20px;
+    border: 1px solid #DDD;
+    height: 30px;
 }

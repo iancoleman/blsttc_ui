@@ -222,6 +222,151 @@
 
     <hr>
 
+    <div id="dkg-keys">
+
+        <h2>Distributed Key Generation (DKG)</h2>
+
+        <p>
+        A way to generate a group public key by coordinated action rather
+        than a
+        trusted dealer.
+        </p>
+
+        <p>This is how
+        a group of untrusted nodes
+        (eg elders in a section on the SAFE network)
+        can form a group key without giving away
+        any individual secrets or trusting any individual participant.
+        </p>
+
+        <p>
+        Some details are not included (such as handling faulty nodes or
+        the encryption of commitments) but they can be seen in the
+        <a href="https://github.com/maidsafe/BLS-DKG">
+            BLS-DKG</a>
+        crate which this example is based on, as well as
+        <a href="https://github.com/dashpay/dips/blob/master/dip-0006/bls_m-of-n_threshold_scheme_and_dkg.md#distributed-key-generation-dkg-protocol">
+            DIP-0006</a>
+        which BLS-DKG is based on.
+        There is also
+        <a href=="https://github.com/poanetwork/threshold_crypto/blob/d81953b55d181311c2a4eed2b6c34059fcf3fdae/src/poly.rs#L967">
+        an example of DKG</a>
+        in the threshold_crypto crate.
+        This example is based on all participants performing the process as
+        expected.
+        </p>
+
+        <p>
+        Input: Shares Matrix -
+        <button class="generate">Generate</button>
+        a group of
+        <input class="total-nodes" type="number" min="3" max=10" value="4">
+        nodes with at least
+        <input class="threshold" type="number" min="2" max=10" value="2">
+        nodes required to sign or decrypt messages.
+        </p>
+
+        <p>
+        Output: The group master public key used for encrypting
+        and verifying messages is:
+        </p>
+        <input class="mpk-hex" placeholder="eg a32fc9...">
+
+        <p>
+        Hover on a cell, the details of the relevant shares will
+        display below the table.
+        </p>
+        <p>
+        Click a cell to retain the details while scrolling, click again to
+        unlock.
+        </p>
+
+        <p>
+        Cell F3T2 should be read as
+        "Share sent
+        <b>F</b>rom node <b>3</b>
+        <b>T</b>o node <b>2</b>".
+        </p>
+
+        <table class="shares"><tbody>
+            <!-- populated by javascript depending on number of nodes -->
+            <tr>
+                <td></td><td></td><td></td><td>
+            </tr>
+            <tr>
+                <td></td><td></td><td></td><td>
+            </tr>
+            <tr>
+                <td></td><td></td><td></td><td>
+            </tr>
+            <tr>
+                <td></td><td></td><td></td><td>
+            </tr>
+        </tbody></table>
+
+        <p>
+            Step 1: A secret contribution is created randomly by node
+            <span class="sender-id">0</span>.
+            This is used to derive the list of shares node
+            <span class="sender-id">0</span>
+            will send.
+        </p>
+        <input class="share-creation">
+
+        <p>
+            Step 2: Listed below is commitments <b>sent</b> by node
+            <span class="sender-id">0</span>.
+            Only node
+            <span class="sender-id">0</span>
+            would have this list of commitments.
+        </p>
+        <p>
+            These are derived from secret in step 1 that only node
+            <span class="sender-id">0</span>
+            knows.
+        </p>
+        <p>
+            Even though only one row is currently highlighted, all rows
+            contribute to the DKG process.
+        </p>
+        <div class="shares-created" contenteditable="true"></div>
+
+        <p>
+            Step 3: Listed below is commitments <b>received</b> by node
+            <span class="receiver-id">0</span>.
+            Only node
+            <span class="receiver-id">0</span>
+            would have this list of commitments.
+        </p>
+        <p>
+            These are used by node
+            <span class="receiver-id">0</span>
+            to generate their secret key share.
+        </p>
+        <p>
+            Even though only one column is currently highlighted, all columns
+            contribute to the DKG process.
+        </p>
+        <div class="shares-received" contenteditable="true"></div>
+
+        <p>
+            Step 4: Secret Key Share for node
+            <span class="receiver-id">0</span>.
+            32 bytes ie 64 hex chars.
+            This is created by combining the commitments received by node
+            <span class="receiver-id">0</span>.
+        </p>
+        <input class="skshare-hex" placeholder="eg 9bb286...">
+
+        <p>
+            Step 5: The group master public key can be derived by all nodes by
+            combining all the contributions, and is shown above the table.
+        </p>
+
+    </div>
+
+    <hr>
+
     <div id="thresh-sig">
 
         <h2>Sign Group Message</h2>
@@ -329,6 +474,7 @@
 <!-- autogenerated wasm will be inserted here -->
 
     <script src="js/errors.js"></script>
+    <script src="js/dkg.js"></script>
     <script src="js/index.js"></script>
 
 </body>
