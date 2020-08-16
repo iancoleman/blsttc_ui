@@ -157,7 +157,7 @@ function set_rng_values_wasm() {
         alert("Secure randomness not available in this browser, output is insecure.");
         return
     }
-    let RNG_VALUES_SIZE = 200;
+    let RNG_VALUES_SIZE = wasmExports.get_rng_values_size();
     let rngValues = new Uint32Array(RNG_VALUES_SIZE);
     window.crypto.getRandomValues(rngValues);
     for (let i=0; i<rngValues.length; i++) {

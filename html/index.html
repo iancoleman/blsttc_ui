@@ -241,7 +241,7 @@
 
         <p>
         Some details are not included (such as handling faulty nodes or
-        the encryption of commitments) but they can be seen in the
+        the encryption of shares) but they can be seen in the
         <a href="https://github.com/maidsafe/BLS-DKG">
             BLS-DKG</a>
         crate which this example is based on, as well as
@@ -252,23 +252,24 @@
         <a href=="https://github.com/poanetwork/threshold_crypto/blob/d81953b55d181311c2a4eed2b6c34059fcf3fdae/src/poly.rs#L967">
         an example of DKG</a>
         in the threshold_crypto crate.
-        This example is based on all participants performing the process as
-        expected.
         </p>
 
         <p>
         Input: Shares Matrix -
         <button class="generate">Generate</button>
         a group of
-        <input class="total-nodes" type="number" min="3" max=10" value="4">
+        <input class="total-nodes" type="number" min="3" max="10" value="4">
         nodes with at least
-        <input class="threshold" type="number" min="2" max=10" value="2">
-        nodes required to sign or decrypt messages.
+        <input class="threshold" type="number" min="2" max="10" value="2">
+        nodes required to sign or decrypt messages (maximum 10 nodes).
         </p>
 
+        <p class="error text-red hidden"></p>
+
         <p>
-        Output: The group master public key used for encrypting
-        and verifying messages is:
+        Output: The group master public key used for encrypting and verifying
+        messages. This is generated in Step 5, shown below the table, but is
+        shown here because it's known by all participants.
         </p>
         <input class="mpk-hex" placeholder="eg a32fc9...">
 
@@ -288,40 +289,54 @@
         <b>T</b>o node <b>2</b>".
         </p>
 
+        <p>
+        Every node is responsible for
+        generating
+        their row of shares in the table, and
+        combining
+        their column of received shares.
+        </p>
+
         <table class="shares"><tbody>
             <!-- populated by javascript depending on number of nodes -->
             <tr>
-                <td></td><td></td><td></td><td>
+                <td>F1T1</td><td>F1T2</td><td>F1T3</td><td>F1T4</td>
             </tr>
             <tr>
-                <td></td><td></td><td></td><td>
+                <td>F2T1</td><td>F2T2</td><td>F2T3</td><td>F2T4</td>
             </tr>
             <tr>
-                <td></td><td></td><td></td><td>
+                <td>F3T1</td><td>F3T2</td><td>F3T3</td><td>F3T4</td>
             </tr>
             <tr>
-                <td></td><td></td><td></td><td>
+                <td>F4T1</td><td>F4T2</td><td>F4T3</td><td>F4T4</td>
             </tr>
         </tbody></table>
 
         <p>
-            Step 1: A secret contribution is created randomly by node
-            <span class="sender-id">0</span>.
-            This is used to derive the list of shares node
-            <span class="sender-id">0</span>
-            will send.
+            Step 1: All nodes generate their own unique secret (called a
+            BivarPoly).
+            This is used to derive the list of shares for
+            the other nodes, shown in Step 2.
+        </p>
+        <p>
+            The value shown below is the public portion of node
+            <span class="sender-id">0</span>'s BivarPoly.
+            The public portion is shared to all nodes and combined into
+            the group master public key in Step 5.
         </p>
         <input class="share-creation">
 
         <p>
-            Step 2: Listed below is commitments <b>sent</b> by node
-            <span class="sender-id">0</span>.
+            Step 2: Listed below are shares node
+            <span class="sender-id">0</span>
+            will <b>send</b> to every other node.
             Only node
             <span class="sender-id">0</span>
-            would have this list of commitments.
+            has this list of shares.
         </p>
         <p>
-            These are derived from secret in step 1 that only node
+            These are derived from the secret in Step 1 that only node
             <span class="sender-id">0</span>
             knows.
         </p>
@@ -332,16 +347,17 @@
         <div class="shares-created" contenteditable="true"></div>
 
         <p>
-            Step 3: Listed below is commitments <b>received</b> by node
-            <span class="receiver-id">0</span>.
+            Step 3: Listed below are shares node
+            <span class="receiver-id">0</span>
+            will <b>receive</b> from every other node.
             Only node
             <span class="receiver-id">0</span>
-            would have this list of commitments.
+            has this list of shares.
         </p>
         <p>
             These are used by node
             <span class="receiver-id">0</span>
-            to generate their secret key share.
+            to generate their secret key share, shown in Step 4.
         </p>
         <p>
             Even though only one column is currently highlighted, all columns
@@ -353,15 +369,43 @@
             Step 4: Secret Key Share for node
             <span class="receiver-id">0</span>.
             32 bytes ie 64 hex chars.
-            This is created by combining the commitments received by node
-            <span class="receiver-id">0</span>.
+            This is created by combining the shares received by node
+            <span class="receiver-id">0</span>
+            in Step 3.
         </p>
         <input class="skshare-hex" placeholder="eg 9bb286...">
 
         <p>
-            Step 5: The group master public key can be derived by all nodes by
-            combining all the contributions, and is shown above the table.
+            Step 5: The group master public key can be derived by any node by
+            combining all the public portions of the BivarPolys (see Step 1
+            above and Bonus #2 below). The group master public key is shown
+            above the table.
         </p>
+
+        <p>
+        Bonus #1: The complete list of Secret Key Shares is shown below. This
+        would never be seen in real life since each node derives their own
+        secret key from information sent to it by other nodes (see Step 4).
+        But it's handy to have this list here for using elsewhere in this tool.
+        </p>
+        <textarea class="all-skshares"></textarea>
+
+        <p>
+        Bonus #2: The complete list of BivarPoly public portions
+        - ie <code>BivarPoly.commitment().row(0)</code> -
+        is shown below. This list is known by all nodes, and can be combined to
+        generate the group master public key.
+        </p>
+        <textarea class="all-share-creations"></textarea>
+
+        <p>
+        Bonus #3: The Master Secret Key Poly is shown below. This would
+        never be seen in real life since no node has all the secrets needed
+        to generate it.
+        But it's handy for using elsewhere in this tool,
+        such as the input for Simple Threshold Keys.
+        </p>
+        <input class="msk-poly-hex"></textarea>
 
     </div>
 

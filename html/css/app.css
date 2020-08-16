@@ -19,8 +19,7 @@ div[contenteditable="true"] {
     padding: 8px;
 }
 
-textarea,
-div[contenteditable="true"] {
+textarea {
     height: 150px;
 }
 
@@ -62,4 +61,9 @@ table.shares td {
     padding: 20px;
     border: 1px solid #DDD;
     height: 30px;
+}
+
+.shared-secret {
+    padding: 10px 0;
+    margin: 1px 0;
 }

@@ -1,5 +1,16 @@
 use wasm_bindgen::prelude::*;
-use threshold_crypto::{Ciphertext, poly::Poly, PublicKey, SecretKey, serde_impl::SerdeSecret, SecretKeySet, Signature};
+use threshold_crypto::{Ciphertext, Fr, PublicKey, PublicKeySet, SecretKey, SecretKeySet, SecretKeyShare, Signature, poly::{
+    Poly,
+    BivarPoly,
+}, serde_impl::SerdeSecret, ff::Field};
+
+// DKG constants
+const MAX_NODES: usize = 10;
+const MAX_ROW_SIZE: usize = 360;
+const MAX_COMMITMENT_SIZE: usize = 536;
+const MAX_SHARES: usize = MAX_NODES * MAX_NODES;
+const ROW_BYTES: usize = MAX_ROW_SIZE * MAX_SHARES;
+const COMMITMENT_BYTES: usize = MAX_COMMITMENT_SIZE * MAX_NODES;
 
 static mut SK_BYTES: [u8; 32] = [0; 32];
 static mut PK_BYTES: [u8; 48] = [0; 48];
@@ -8,19 +19,32 @@ static mut MSG_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
 static mut CT_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
 // rng.next() is called 4 times during encrypt
 // rng.next() is called up to 48 times during Poly::random(10, rng)
-// so use these values instead of trying to use OsRng. Since javascript can
+// rng.next() is called up to 376 times during BivarPoly::random(10, rng)
+// BivarPoly may be called up to MAX_NODES times in generate_bivars.
+// Use these values instead of trying to use OsRng. Since javascript can
 // only set u32 use 2 of these for every call to rng.next()
-static mut RNG_VALUES: [u32; 200] = [0; 200];
+const RNG_VALUES_SIZE: usize = 376 * 2 * MAX_NODES;
+static mut RNG_VALUES: [u32; RNG_VALUES_SIZE] = [0; RNG_VALUES_SIZE];
 static mut RNG_INDEX: usize = 0;
 static mut RNG_NEXT_COUNT: usize = 0;
 // Poly which can be converted into SecretKeySet
-// Threshold of 10 gives size of 360 bytes when serialized
+// Threshold of 10 gives poly size of 360 bytes when serialized
 static mut POLY_BYTES: [u8; 360] = [0; 360];
 static mut MSK_BYTES: [u8; 32] = [0; 32];
 static mut MPK_BYTES: [u8; 48] = [0; 48];
 static mut SKSHARE_BYTES: [u8; 32] = [0; 32];
 static mut PKSHARE_BYTES: [u8; 48] = [0; 48];
+// DKG variables
+// Threshold of 10 gives row size of 360 bytes when serialized
+// Threshold of 10 gives commitment size of 3184 bytes when serialized
+static mut BIVAR_ROW_BYTES: [u8; ROW_BYTES] = [0; ROW_BYTES];
+static mut BIVAR_COMMITMENT_BYTES: [u8; COMMITMENT_BYTES] = [0; COMMITMENT_BYTES];
+static mut BIVAR_SKS_BYTES: [u8; 32 * MAX_NODES] = [0; 32 * MAX_NODES];
 
+#[wasm_bindgen]
+pub fn get_rng_values_size() -> usize {
+    RNG_VALUES_SIZE
+}
 #[wasm_bindgen]
 pub fn set_rng_value(i: usize, v: u32) {
     unsafe {
@@ -147,6 +171,50 @@ pub fn get_pkshare_byte(i: usize) -> u8 {
         PKSHARE_BYTES[i]
     }
 }
+#[wasm_bindgen]
+pub fn set_bivar_row_byte(i: usize, from_node: usize, to_node: usize, v: u8) {
+    unsafe {
+        let share_index = from_node * MAX_NODES + to_node;
+        let row_byte_start = share_index * MAX_ROW_SIZE;
+        BIVAR_ROW_BYTES[row_byte_start + i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_bivar_row_byte(i: usize, from_node: usize, to_node: usize) -> u8 {
+    unsafe {
+        let share_index = from_node * MAX_NODES + to_node;
+        let row_byte_start = share_index * MAX_ROW_SIZE;
+        BIVAR_ROW_BYTES[row_byte_start + i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_bivar_commitment_byte(i: usize, from_node: usize, v: u8) {
+    unsafe {
+        let commitment_byte_start = from_node * MAX_COMMITMENT_SIZE;
+        BIVAR_COMMITMENT_BYTES[commitment_byte_start + i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_bivar_commitment_byte(i: usize, from_node: usize) -> u8 {
+    unsafe {
+        let commitment_byte_start = from_node * MAX_COMMITMENT_SIZE;
+        BIVAR_COMMITMENT_BYTES[commitment_byte_start + i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_bivar_sks_byte(i: usize, node_index: usize, v: u8) {
+    unsafe {
+        let sks_byte_start = 32 * node_index;
+        BIVAR_SKS_BYTES[sks_byte_start + i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_bivar_sks_byte(i: usize, node_index: usize) -> u8 {
+    unsafe {
+        let sks_byte_start = 32 * node_index;
+        BIVAR_SKS_BYTES[sks_byte_start + i]
+    }
+}
 
 #[wasm_bindgen]
 // Requires sk_bytes to be already set.
@@ -238,17 +306,6 @@ pub fn decrypt(ct_size: usize) -> usize {
     }
 }
 
-//#[wasm_bindgen]
-//pub fn derive_pmk_from_sks() {
-//    unsafe {
-//        let sks: SecretKeySet = bincode::deserialize(&POLY_BYTES).unwrap();
-//        let pmk_vec = sks.public_keys().public_key().to_bytes().to_vec();
-//        for i in 0..pmk_vec.len() {
-//            PMK_BYTES[i] = pmk_vec[i];
-//        }
-//    }
-//}
-
 #[wasm_bindgen]
 pub fn generate_poly(threshold: usize, seed1: u64, seed2: u64) -> usize {
     unsafe {
@@ -319,6 +376,84 @@ pub fn derive_key_share(i: usize) {
 pub fn get_rng_next_count() -> usize {
     unsafe {
         RNG_NEXT_COUNT
+    }
+}
+
+// fills BIVAR_ROW_BYTES and BIVAR_COMMITMENT_BYTES
+// with the required number of rows and commitments,
+// although not all are necessarily going to be used.
+// Values are concatenated into the BYTES vectors.
+#[wasm_bindgen]
+pub fn generate_bivars(threshold: usize, total_nodes: usize) {
+    unsafe {
+        let mut rng = CountingRng(0);
+        // Initialize the group master public key (a commitment, ie
+        // equivalent to a PublicKeySet which it is converted to at the end)
+        let mut mpk_commitment = Poly::zero().commitment();
+        // Initialize the group master secret key, which is never known to
+        // any node but is shown for information.
+        let mut msk = Poly::zero();
+        // Initialize each node secret key share
+        let mut secret_key_shares = Vec::new();
+        for _ in 0..total_nodes {
+            let sk_val = Fr::zero();
+            secret_key_shares.push(sk_val);
+        }
+        // Each node will create part of the group master public key
+        // and part of each other node secret key share.
+        for from_node in 0..total_nodes {
+            // The 'from' node creates a contribution which is a BivarPoly,
+            // from which rows (secret key shares) and
+            // the commitment (master public key part)
+            // can be calculated.
+            let bivar = BivarPoly::random(threshold, &mut rng);
+            // Add this to the secret key set
+            msk += bivar.row(0);
+            // commitment (public part)
+            // In BLS-DKG library the commitment itself is shared, but only
+            // commitment.row(0) is used in calculation of the master
+            // public key so we'll only store the commitment.row(0).
+            let commitment = bivar.commitment().row(0);
+            let commitment_vec = bincode::serialize(&commitment).unwrap();
+            for i in 0..commitment_vec.len() {
+                set_bivar_commitment_byte(i, from_node, commitment_vec[i]);
+            }
+            // update the group master public key with this commitment data
+            mpk_commitment += commitment;
+            // Calculate the secret key parts to be shared with other nodes
+            for to_node in 0..total_nodes {
+                // row (secret part)
+                let row = bivar.row(to_node+1);
+                // add this to the secret key share for the to node
+                secret_key_shares[to_node].add_assign(&row.evaluate(0));
+                // record the row
+                let row_vec = bincode::serialize(&row).unwrap();
+                for i in 0..row_vec.len() {
+                    set_bivar_row_byte(i, from_node, to_node, row_vec[i]);
+                }
+            }
+        }
+        // save the group master public key
+        let mpkset = PublicKeySet::from(mpk_commitment);
+        let mpk = mpkset.public_key();
+        let mpk_vec = mpk.to_bytes().to_vec();
+        for i in 0..mpk_vec.len() {
+            MPK_BYTES[i] = mpk_vec[i];
+        }
+        // save the master secret key
+        let msk_vec = bincode::serialize(&msk).unwrap();
+        for i in 0..msk_vec.len() {
+            POLY_BYTES[i] = msk_vec[i];
+        }
+        // save the secret key shares
+        for node_index in 0..total_nodes {
+            let mut sk_val = secret_key_shares[node_index];
+            let sk = SecretKeyShare::from_mut(&mut sk_val);
+            let sk_vec = bincode::serialize(&SerdeSecret(&sk)).unwrap();
+            for i in 0..sk_vec.len() {
+                set_bivar_sks_byte(i, node_index, sk_vec[i]);
+            }
+        }
     }
 }
 
