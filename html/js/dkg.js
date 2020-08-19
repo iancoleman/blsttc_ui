@@ -9,54 +9,6 @@
         to: 0,
     }
 
-    // the number of bytes in a row derived from a BivarPoly
-    // which varies depending on the threshold.
-    let row_sizes_by_threshold = [
-        40, // threshold 0
-        72, // threshold 1
-        104, // threshold 2
-        136, // threshold 3
-        168, // threshold 4
-        200, // threshold 5
-        232, // threshold 6
-        264, // threshold 7
-        296, // threshold 8
-        328, // threshold 9
-        360, // threshold 10
-    ]
-
-    // the number of bytes in a commitment derived from a BivarPoly
-    // which varies depending on the threshold.
-    let commitment_sizes_by_threshold = [
-        56, // threshold 0
-        104, // threshold 1
-        152, // threshold 2
-        200, // threshold 3
-        248, // threshold 4
-        296, // threshold 5
-        344, // threshold 6
-        392, // threshold 7
-        440, // threshold 8
-        488, // threshold 9
-        536, // threshold 10
-    ]
-
-    // the number of bytes in the master secret key (Poly)
-    // which varies depending on the threshold.
-    let poly_sizes_by_threshold = [
-        40, // threshold 0
-        72, // threshold 1
-        104, // threshold 2
-        136, // threshold 3
-        168, // threshold 4
-        200, // threshold 5
-        232, // threshold 6
-        264, // threshold 7
-        296, // threshold 8
-        328, // threshold 9
-        360, // threshold 10
-    ]
-
     let Share = function(from, to, totalNodes, threshold) {
 
         let self = this;
@@ -395,7 +347,7 @@
         DOM.sharesCreated.innerHTML = "";
         DOM.sharesReceived.innerHTML = "";
         DOM.skshareHex.value = "";
-        set_rng_values_wasm();
+        wasmHelpers.set_rng_values();
         // get contribution parameters
         let totalNodes = getTotalNodes();
         let threshold = parseInt(DOM.threshold.value);
