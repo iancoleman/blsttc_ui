@@ -99,31 +99,31 @@
                 shares[cellIndex].colorize();
             }
             // set sender id
-            for (let i=0; i<DOM.senderId.length; i++) {
-                DOM.senderId[i].textContent = senderId;
+            for (let i=0; i<DOM.dkg.senderId.length; i++) {
+                DOM.dkg.senderId[i].textContent = senderId;
             }
             // set receiver id
-            for (let i=0; i<DOM.receiverId.length; i++) {
-                DOM.receiverId[i].textContent = receiverId;
+            for (let i=0; i<DOM.dkg.receiverId.length; i++) {
+                DOM.dkg.receiverId[i].textContent = receiverId;
             }
             // set share creation
-            DOM.shareCreation.value = self.shareCreationHex;
+            DOM.dkg.shareCreation.value = self.shareCreationHex;
             // set shares created
-            DOM.sharesCreated.innerHTML = "";
+            DOM.dkg.sharesCreated.innerHTML = "";
             for (let i=0; i<sharesCreated.length; i++) {
                 let action = "Sent by node " + (from+1) + " to node " + (i+1);
                 let el = makeShareLineEl(from, i, sharesCreated[i], action);
-                DOM.sharesCreated.appendChild(el);
+                DOM.dkg.sharesCreated.appendChild(el);
             }
             // set shares received
-            DOM.sharesReceived.innerHTML = "";
+            DOM.dkg.sharesReceived.innerHTML = "";
             for (let i=0; i<sharesReceived.length; i++) {
                 let action = "Received by node " + (to+1) + " from node " + (i+1);
                 let el = makeShareLineEl(i, to, sharesReceived[i], action);
-                DOM.sharesReceived.appendChild(el);
+                DOM.dkg.sharesReceived.appendChild(el);
             }
             // set secret key share
-            DOM.skshareHex.value = self.skshareHex;
+            DOM.dkg.skshareHex.value = self.skshareHex;
         }
 
         function deactivateAll() {
@@ -208,36 +208,34 @@
         return el;
     }
 
-    let DOM = {};
+    DOM.dkg = document.querySelectorAll("#dkg-keys")[0];
+    DOM.dkg.generate = DOM.dkg.querySelectorAll(".generate")[0];
+    DOM.dkg.totalNodes = DOM.dkg.querySelectorAll(".total-nodes")[0];
+    DOM.dkg.threshold = DOM.dkg.querySelectorAll(".threshold")[0];
+    DOM.dkg.shares = DOM.dkg.querySelectorAll(".shares tbody")[0];
+    DOM.dkg.senderId = DOM.dkg.querySelectorAll(".sender-id");
+    DOM.dkg.receiverId = DOM.dkg.querySelectorAll(".receiver-id");
+    DOM.dkg.shareCreation = DOM.dkg.querySelectorAll(".share-creation")[0];
+    DOM.dkg.sharesCreated = DOM.dkg.querySelectorAll(".shares-created")[0];
+    DOM.dkg.sharesReceived = DOM.dkg.querySelectorAll(".shares-received")[0];
+    DOM.dkg.skshareHex = DOM.dkg.querySelectorAll(".skshare-hex")[0];
+    DOM.dkg.mpkHex = DOM.dkg.querySelectorAll(".mpk-hex")[0];
+    DOM.dkg.allSkshares = DOM.dkg.querySelectorAll(".all-skshares")[0];
+    DOM.dkg.allShareCreations = DOM.dkg.querySelectorAll(".all-share-creations")[0];
+    DOM.dkg.mskPolyHex = DOM.dkg.querySelectorAll(".msk-poly-hex")[0];
+    DOM.dkg.error = DOM.dkg.querySelectorAll(".error")[0];
 
-    DOM.root = document.querySelectorAll("#dkg-keys")[0];
-    DOM.generate = DOM.root.querySelectorAll(".generate")[0];
-    DOM.totalNodes = DOM.root.querySelectorAll(".total-nodes")[0];
-    DOM.threshold = DOM.root.querySelectorAll(".threshold")[0];
-    DOM.shares = DOM.root.querySelectorAll(".shares tbody")[0];
-    DOM.senderId = DOM.root.querySelectorAll(".sender-id");
-    DOM.receiverId = DOM.root.querySelectorAll(".receiver-id");
-    DOM.shareCreation = DOM.root.querySelectorAll(".share-creation")[0];
-    DOM.sharesCreated = DOM.root.querySelectorAll(".shares-created")[0];
-    DOM.sharesReceived = DOM.root.querySelectorAll(".shares-received")[0];
-    DOM.skshareHex = DOM.root.querySelectorAll(".skshare-hex")[0];
-    DOM.mpkHex = DOM.root.querySelectorAll(".mpk-hex")[0];
-    DOM.allSkshares = DOM.root.querySelectorAll(".all-skshares")[0];
-    DOM.allShareCreations = DOM.root.querySelectorAll(".all-share-creations")[0];
-    DOM.mskPolyHex = DOM.root.querySelectorAll(".msk-poly-hex")[0];
-    DOM.error = DOM.root.querySelectorAll(".error")[0];
-
-    DOM.generate.addEventListener("click", generateRandomContributions);
-    DOM.shareCreation.addEventListener("mouseenter", boldRow);
-    DOM.shareCreation.addEventListener("mouseout", unboldRow);
-    DOM.sharesCreated.addEventListener("mouseenter", boldRow);
-    DOM.sharesCreated.addEventListener("mouseout", unboldRow);
-    DOM.sharesReceived.addEventListener("mouseenter", boldColumn);
-    DOM.sharesReceived.addEventListener("mouseout", unboldColumn);
-    DOM.skshareHex.addEventListener("mouseenter", boldColumn);
-    DOM.skshareHex.addEventListener("mouseout", unboldColumn);
-    DOM.mpkHex.addEventListener("mouseenter", boldAll);
-    DOM.mpkHex.addEventListener("mouseout", unboldAll);
+    DOM.dkg.generate.addEventListener("click", generateRandomContributions);
+    DOM.dkg.shareCreation.addEventListener("mouseenter", boldRow);
+    DOM.dkg.shareCreation.addEventListener("mouseout", unboldRow);
+    DOM.dkg.sharesCreated.addEventListener("mouseenter", boldRow);
+    DOM.dkg.sharesCreated.addEventListener("mouseout", unboldRow);
+    DOM.dkg.sharesReceived.addEventListener("mouseenter", boldColumn);
+    DOM.dkg.sharesReceived.addEventListener("mouseout", unboldColumn);
+    DOM.dkg.skshareHex.addEventListener("mouseenter", boldColumn);
+    DOM.dkg.skshareHex.addEventListener("mouseout", unboldColumn);
+    DOM.dkg.mpkHex.addEventListener("mouseenter", boldAll);
+    DOM.dkg.mpkHex.addEventListener("mouseout", unboldAll);
 
     function boldRow() {
         let totalCells = getTotalCells();
@@ -316,7 +314,7 @@
     }
 
     function getTotalNodes() {
-        return parseInt(DOM.totalNodes.value);
+        return parseInt(DOM.dkg.totalNodes.value);
     }
 
     function getTotalCells() {
@@ -325,32 +323,32 @@
     }
 
     function showError(msg) {
-        DOM.error.textContent = msg;
-        DOM.error.classList.remove("hidden");
+        DOM.dkg.error.textContent = msg;
+        DOM.dkg.error.classList.remove("hidden");
     }
 
     function hideError() {
-        DOM.error.classList.add("hidden");
-        DOM.error.textContent = "";
+        DOM.dkg.error.classList.add("hidden");
+        DOM.dkg.error.textContent = "";
     }
 
     function generateRandomContributions() {
         // clear old values
         hideError();
         shares = [];
-        DOM.shares.innerHTML = "";
-        DOM.mpkHex.value = "";
-        DOM.allSkshares.value = "";
-        DOM.allShareCreations.value = "";
-        DOM.mskPolyHex.value = "";
-        DOM.shareCreation.value = "";
-        DOM.sharesCreated.innerHTML = "";
-        DOM.sharesReceived.innerHTML = "";
-        DOM.skshareHex.value = "";
+        DOM.dkg.shares.innerHTML = "";
+        DOM.dkg.mpkHex.value = "";
+        DOM.dkg.allSkshares.value = "";
+        DOM.dkg.allShareCreations.value = "";
+        DOM.dkg.mskPolyHex.value = "";
+        DOM.dkg.shareCreation.value = "";
+        DOM.dkg.sharesCreated.innerHTML = "";
+        DOM.dkg.sharesReceived.innerHTML = "";
+        DOM.dkg.skshareHex.value = "";
         wasmHelpers.set_rng_values();
         // get contribution parameters
         let totalNodes = getTotalNodes();
-        let threshold = parseInt(DOM.threshold.value);
+        let threshold = parseInt(DOM.dkg.threshold.value);
         // validate values
         if (totalNodes < 2) {
             showError("Must be at least 2 nodes");
@@ -381,7 +379,7 @@
                 row.appendChild(share.el);
             }
             // show this row in the table
-            DOM.shares.append(row);
+            DOM.dkg.shares.append(row);
         }
         // activate random cell
         firstFrom = Math.floor(totalNodes * Math.random());
@@ -395,19 +393,19 @@
             mpkBytes.push(mpkByte);
         }
         let mpkHex = uint8ArrayToHex(mpkBytes);
-        DOM.mpkHex.value = mpkHex;
+        DOM.dkg.mpkHex.value = mpkHex;
         // show all skshares
         let skshares = "";
         for (let i=0; i<totalNodes; i++) {
             skshares += shares[i].skshareHex + "\n";
         }
-        DOM.allSkshares.value = skshares.trim();
+        DOM.dkg.allSkshares.value = skshares.trim();
         // show all bivar commitments
         let bivarCommitments = "";
         for (let i=0; i<totalNodes; i++) {
             bivarCommitments += shares[i*totalNodes].shareCreationHex + "\n";
         }
-        DOM.allShareCreations.value = bivarCommitments.trim();
+        DOM.dkg.allShareCreations.value = bivarCommitments.trim();
         // show master secret key
         let mskPolySize = poly_sizes_by_threshold[threshold];
         let mskPolyBytes = [];
@@ -416,7 +414,7 @@
             mskPolyBytes.push(mskPolyByte);
         }
         let mskPolyHex = uint8ArrayToHex(mskPolyBytes);
-        DOM.mskPolyHex.value = mskPolyHex;
+        DOM.dkg.mskPolyHex.value = mskPolyHex;
     }
 
 })();

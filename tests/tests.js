@@ -171,7 +171,37 @@ let tests = [
             throw(name + ": public key set length zero when clicking generate");
         }
         next();
-    }
+    },
+
+    function() {
+        let name = "DKG can be generated";
+        DOM.dkg.generate.dispatchEvent(clickEvt);
+        if (DOM.dkg.mpkHex.value.length == 0) {
+            throw(name + ": dkg mpk length zero when clicking generate");
+        }
+        if (DOM.dkg.shareCreation.value.length == 0) {
+            throw(name + ": dkg share creation length zero when clicking generate");
+        }
+        if (DOM.dkg.sharesCreated.textContent.trim().length == 0) {
+            throw(name + ": dkg shares created length zero when clicking generate");
+        }
+        if (DOM.dkg.sharesReceived.textContent.trim().length == 0) {
+            throw(name + ": dkg shares received length zero when clicking generate");
+        }
+        if (DOM.dkg.skshareHex.value.length == 0) {
+            throw(name + ": dkg skshare length zero when clicking generate");
+        }
+        if (DOM.dkg.allSkshares.value.length == 0) {
+            throw(name + ": dkg all skshares length zero when clicking generate");
+        }
+        if (DOM.dkg.allShareCreations.value.length == 0) {
+            throw(name + ": dkg all share creations length zero when clicking generate");
+        }
+        if (DOM.dkg.mskPolyHex.value.length == 0) {
+            throw(name + ": dkg msk poly length zero when clicking generate");
+        }
+        next();
+    },
 
     // TODO less urgent tests:
     // Changing threshold changes poly
