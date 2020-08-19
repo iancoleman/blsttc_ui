@@ -117,12 +117,8 @@ this.encrypt = function(p, m) {
             wasmExports.set_msg_byte(i, m[i]);
         }
         // generate strong random u64 used by encrypt
-        let entropy = new Uint32Array(2);
-        window.crypto.getRandomValues(entropy);
-        let r1 = entropy[0];
-        let r2 = entropy[1];
         // encrypt the message
-        let ctSize = wasmExports.encrypt(m.length, r1, r2);
+        let ctSize = wasmExports.encrypt(m.length);
         // get ciphertext bytes
         for (let i=0; i<ctSize; i++) {
             let ctByte = wasmExports.get_ct_byte(i);
@@ -166,11 +162,7 @@ this.decrypt = function(s, c) {
 
 this.generate_poly = function(threshold) {
     wasmHelpers.set_rng_values();
-    let entropy = new Uint32Array(2);
-    window.crypto.getRandomValues(entropy);
-    let r1 = entropy[0];
-    let r2 = entropy[1];
-    let polySize = wasmExports.generate_poly(threshold, r1, r2);
+    let polySize = wasmExports.generate_poly(threshold);
     let polyBytes = [];
     for (let i=0; i<polySize; i++) {
         let polyByte = wasmExports.get_poly_byte(i);

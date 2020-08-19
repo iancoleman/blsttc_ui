@@ -264,7 +264,7 @@ pub fn verify(msg_size: usize) -> bool {
 }
 
 #[wasm_bindgen]
-pub fn encrypt(msg_size: usize, seed1: u64, seed2: u64) -> usize {
+pub fn encrypt(msg_size: usize) -> usize {
     unsafe {
         // create public key vec from input parameters
         let pk = PublicKey::from_bytes(PK_BYTES).unwrap();
@@ -273,8 +273,7 @@ pub fn encrypt(msg_size: usize, seed1: u64, seed2: u64) -> usize {
         for i in 0..msg_size {
             msg.push(MSG_BYTES[i]);
         }
-        let seed: u64 = seed1 << 32 + seed2;
-        let mut rng = CountingRng(seed);
+        let mut rng = ExternalRng(0);
         let ct = pk.encrypt_with_rng(&mut rng, msg);
         let ct_vec = bincode::serialize(&ct).unwrap();
         for i in 0..ct_vec.len() {
@@ -307,10 +306,9 @@ pub fn decrypt(ct_size: usize) -> usize {
 }
 
 #[wasm_bindgen]
-pub fn generate_poly(threshold: usize, seed1: u64, seed2: u64) -> usize {
+pub fn generate_poly(threshold: usize) -> usize {
     unsafe {
-        let seed: u64 = seed1 << 32 + seed2;
-        let mut rng = CountingRng(seed);
+        let mut rng = ExternalRng(0);
         let poly = Poly::random(threshold, &mut rng);
         let poly_vec = bincode::serialize(&poly).unwrap();
         for i in 0..poly_vec.len() {
@@ -386,7 +384,7 @@ pub fn get_rng_next_count() -> usize {
 #[wasm_bindgen]
 pub fn generate_bivars(threshold: usize, total_nodes: usize) {
     unsafe {
-        let mut rng = CountingRng(0);
+        let mut rng = ExternalRng(0);
         // Initialize the group master public key (a commitment, ie
         // equivalent to a PublicKeySet which it is converted to at the end)
         let mut mpk_commitment = Poly::zero().commitment();
@@ -461,9 +459,9 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
 // https://rust-random.github.io/rand/rand/trait.RngCore.html
 use rand_core::{RngCore, Error, impls};
 
-struct CountingRng(u64);
+struct ExternalRng(u64);
 
-impl RngCore for CountingRng {
+impl RngCore for ExternalRng {
     fn next_u32(&mut self) -> u32 {
         self.next_u64() as u32
     }
