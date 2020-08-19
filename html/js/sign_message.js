@@ -8,6 +8,8 @@ DOM.signMsg.sig = document.querySelectorAll("#sign-msg .sig")[0];
 DOM.signMsg.skHex.addEventListener("input", signMsg);
 DOM.signMsg.msg.addEventListener("input", signMsg);
 
+let signError = new ErrorDisplay("#sign-msg .error");
+
 let signDebounce = null;
 function signMsg() {
     signError.hide();
@@ -29,7 +31,7 @@ function signMsg() {
             return;
         }
         if (skHex.length != skLen * 2) {
-            let errMsg = skErrMsg(skHex.length);
+            let errMsg = errorMessages.skLength(skHex.length);
             signError.show(errMsg);
             return;
         }
@@ -41,7 +43,7 @@ function signMsg() {
             return
         }
         if (msg.length > maxMsgLen) {
-            let errMsg = msgErrMsg(msg.length);
+            let errMsg = errorMessages.msgLength(msg.length);
             signError.show(errMsg);
             return;
         }

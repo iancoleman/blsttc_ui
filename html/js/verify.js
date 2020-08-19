@@ -10,6 +10,8 @@ DOM.verify.pkHex.addEventListener("input", verify);
 DOM.verify.msg.addEventListener("input", verify);
 DOM.verify.sig.addEventListener("input", verify);
 
+verifyError = new ErrorDisplay("#verify .error");
+
 let verifyDebounce = null;
 function verify() {
     verifyError.hide();
@@ -31,7 +33,7 @@ function verify() {
             return;
         }
         if (pkHex.length != pkLen * 2) {
-            let errMsg = pkErrMsg(pkHex.length);
+            let errMsg = errorMessages.pkLength(pkHex.length);
             verifyError.show(errMsg);
             return;
         }

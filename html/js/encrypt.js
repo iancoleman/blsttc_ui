@@ -8,6 +8,8 @@ DOM.encrypt.ct = document.querySelectorAll("#encrypt .ct")[0];
 DOM.encrypt.pkHex.addEventListener("input", encrypt);
 DOM.encrypt.msg.addEventListener("input", encrypt);
 
+encryptError = new ErrorDisplay("#encrypt .error");
+
 let encryptDebounce = null;
 function encrypt() {
     encryptError.hide();
@@ -29,7 +31,7 @@ function encrypt() {
             return;
         }
         if (pkHex.length != pkLen * 2) {
-            let errMsg = pkErrMsg(pkHex.length);
+            let errMsg = errorMessages.pkLength(pkHex.length);
             encryptError.show(errMsg);
             return;
         }
@@ -41,7 +43,7 @@ function encrypt() {
             return;
         }
         if (msg.length > maxMsgLen) {
-            let errMsg = msgErrMsg(msg.length);
+            let errMsg = errorMessages.msgLength(msg.length);
             encryptError.show(errMsg);
             return;
         }

@@ -8,6 +8,8 @@ DOM.decrypt.msg = document.querySelectorAll("#decrypt .msg")[0];
 DOM.decrypt.skHex.addEventListener("input", decrypt);
 DOM.decrypt.ct.addEventListener("input", decrypt);
 
+decryptError = new ErrorDisplay("#decrypt .error");
+
 function decrypt() {
     decryptError.hide();
     // if already using wasm buffers, try again later
@@ -23,7 +25,7 @@ function decrypt() {
         return;
     }
     if (skHex.length != skLen * 2) {
-        let errMsg = skErrMsg(skHex.length);
+        let errMsg = errorMessages.skLength(skHex.length);
         decryptError.show(errMsg);
         return;
     }
@@ -35,7 +37,7 @@ function decrypt() {
         return;
     }
     if (ctHex.length > maxCtLen * 2) {
-        let errMsg = ctErrMsg(ctHex.length);
+        let errMsg = errorMessages.ctLength(ctHex.length);
         decryptError.show(errMsg);
         return;
     }

@@ -8,6 +8,8 @@ DOM.skToPk.pkHex = document.querySelectorAll("#sk-to-pk .pk-hex")[0];
 DOM.skToPk.skHex.addEventListener("input", skHexToPkHex);
 DOM.skToPk.generate.addEventListener("click", generateSk);
 
+let deriveError = new ErrorDisplay("#sk-to-pk .error");
+
 function generateSk() {
     // Clear existing values
     DOM.skToPk.skHex.value = "";
@@ -46,7 +48,7 @@ function skHexToPkHex() {
         return;
     }
     if (skHex.length != skLen * 2) {
-        let errMsg = skErrMsg(skHex.length);
+        let errMsg = errorMessages.skLength(skHex.length);
         deriveError.show(errMsg);
         return;
     }
