@@ -58,11 +58,10 @@ function deriveStk() {
         wasmExports.derive_key_share(i);
         let skshareBytes = wasmHelpers.get_skshare();
         let skshareHex = uint8ArrayToHex(skshareBytes);
-        skshares += skshareHex + "\n";
-        // show master public key
+        skshares += new OrderedShare(i, skshareHex).toString() + "\n";
         let pkshareBytes = wasmHelpers.get_pkshare();
         let pkshareHex = uint8ArrayToHex(pkshareBytes);
-        pkshares += pkshareHex + "\n";
+        pkshares += new OrderedShare(i, pkshareHex).toString() + "\n";
     }
     DOM.stk.skset.value = skshares.trim();
     DOM.stk.pkset.value = pkshares.trim();

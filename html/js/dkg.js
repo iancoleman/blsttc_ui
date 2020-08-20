@@ -404,7 +404,8 @@
         // show all skshares
         let skshares = "";
         for (let i=0; i<totalNodes; i++) {
-            skshares += shares[i].skshareHex + "\n";
+            let skHex = shares[i].skshareHex;
+            skshares += new OrderedShare(i, skHex).toString() + "\n";
         }
         DOM.dkg.allSkshares.value = skshares.trim();
         // show all bivar commitments
