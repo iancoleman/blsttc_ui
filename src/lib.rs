@@ -1,5 +1,6 @@
+use std::collections::BTreeMap;
 use wasm_bindgen::prelude::*;
-use threshold_crypto::{Ciphertext, Fr, PublicKey, PublicKeySet, SecretKey, SecretKeySet, SecretKeyShare, Signature, poly::{
+use threshold_crypto::{Ciphertext, Fr, PublicKey, PublicKeySet, SecretKey, SecretKeySet, SecretKeyShare, Signature, SignatureShare, poly::{
     Poly,
     BivarPoly,
     Commitment,
@@ -43,6 +44,9 @@ static mut PKSHARE_BYTES: [u8; 48] = [0; 48];
 static mut BIVAR_ROW_BYTES: [u8; ROW_BYTES] = [0; ROW_BYTES];
 static mut BIVAR_COMMITMENTS_BYTES: [u8; BIVAR_COMMITMENTS_SIZE] = [0; BIVAR_COMMITMENTS_SIZE];
 static mut BIVAR_SKS_BYTES: [u8; 32 * MAX_NODES] = [0; 32 * MAX_NODES];
+// Group signing variables
+static mut SIGNATURE_SHARE_BYTES: [u8; 96 * MAX_NODES] = [0; 96 * MAX_NODES];
+static mut SHARE_INDEXES: [usize; MAX_NODES] = [0; MAX_NODES];
 
 #[wasm_bindgen]
 pub fn get_rng_values_size() -> usize {
@@ -228,6 +232,32 @@ pub fn get_bivar_sks_byte(i: usize, node_index: usize) -> u8 {
     unsafe {
         let sks_byte_start = 32 * node_index;
         BIVAR_SKS_BYTES[sks_byte_start + i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_signature_share_byte(i: usize, sig_index: usize, v: u8) {
+    unsafe {
+        let sig_byte_start = 96 * sig_index;
+        SIGNATURE_SHARE_BYTES[sig_byte_start + i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_signature_share_byte(i: usize, sig_index: usize) -> u8 {
+    unsafe {
+        let sig_byte_start = 96 * sig_index;
+        SIGNATURE_SHARE_BYTES[sig_byte_start + i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_share_indexes(i: usize, v: usize) {
+    unsafe {
+        SHARE_INDEXES[i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_share_indexes(i: usize) -> usize {
+    unsafe {
+        SHARE_INDEXES[i]
     }
 }
 
@@ -480,6 +510,40 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
     }
 }
 
+#[wasm_bindgen]
+// Depends on MC_BYTES being set to the correct master commitment
+// so the PublicKeySet can be created and the signature shares combined.
+pub fn combine_signature_shares(total_signatures: usize, commitment_size: usize) {
+    unsafe {
+        // read each signature
+        let mut sigs = BTreeMap::new();
+        for share_index in 0..total_signatures {
+            let index_in_group = get_share_indexes(share_index);
+            let mut sig_bytes: [u8; 96] = [0; 96];
+            for i in 0..96 {
+                let sig_byte = get_signature_share_byte(i, share_index);
+                sig_bytes[i] = sig_byte;
+            }
+            let sig = SignatureShare::from_bytes(sig_bytes).unwrap();
+            sigs.insert(index_in_group, sig);
+        }
+        // read master commitment
+        let mut mc_bytes = Vec::new();
+        for i in 0..commitment_size {
+            let mc_byte = get_mc_byte(i);
+            mc_bytes.push(mc_byte);
+        }
+        let mc: Commitment = bincode::deserialize(&mc_bytes).unwrap();
+        // Combine signatures.
+        let pkset = PublicKeySet::from(mc);
+        let combined = pkset.combine_signatures(&sigs).unwrap();
+        // set signature bytes
+        let combined_vec = combined.to_bytes().to_vec();
+        for i in 0..combined_vec.len() {
+            SIG_BYTES[i] = combined_vec[i];
+        }
+    }
+}
 
 // https://rust-random.github.io/rand/rand/trait.RngCore.html
 use rand_core::{RngCore, Error, impls};

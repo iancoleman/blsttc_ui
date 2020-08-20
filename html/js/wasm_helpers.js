@@ -218,4 +218,38 @@ this.get_pkshare = function() {
     return pkshareBytes;
 }
 
+this.combine_signatures = function(mcBytes, sigshares) {
+    // set master commitment in wasm
+    for (let i=0; i<mcBytes.length; i++) {
+        let v = mcBytes[i];
+        wasmExports.set_mc_byte(i, v);
+    }
+    // set the signature shares
+    for (let shareIndex=0; shareIndex<sigshares.length; shareIndex++) {
+        let share = sigshares[shareIndex];
+        let sigHex = share.shareHex;
+        let sigBytes = hexToUint8Array(sigHex);
+        let sigIndex = share.shareIndex;
+        for (let byteIndex=0; byteIndex<sigBytes.length; byteIndex++) {
+            let sigByte = sigBytes[byteIndex];
+            // NB shareIndex is used instead of sigIndex so we can interate
+            // over both
+            // SHARE_INDEXES[i]
+            // and
+            // SIGNATURE_SHARE_BYTES[i*96:(i+1)*96]
+            wasmExports.set_signature_share_byte(byteIndex, shareIndex, sigByte);
+            wasmExports.set_share_indexes(shareIndex, sigIndex);
+        }
+    }
+    // combine the signatures
+    wasmExports.combine_signature_shares(sigshares.length, mcBytes.length);
+    // read the combined signature
+    let sigBytes = [];
+    for (let i=0; i<sigLen; i++) {
+        let sigByte = wasmExports.get_sig_byte(i);
+        sigBytes.push(sigByte);
+    }
+    return sigBytes;
+}
+
 })();

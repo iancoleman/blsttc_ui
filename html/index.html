@@ -431,7 +431,44 @@
 
         <h2>Sign Group Message</h2>
 
-        <p>Work is in progress...</p>
+        <p>
+        Input: Secret Key Shares. There must be at least m secret keys
+        of an m-of-n group to be able to sign the message.
+        </p>
+        <textarea class="skshares"></textarea>
+
+        <p>
+        Input: Master Commitment. This can be found under the Master Public Key
+        in
+        <a href="#simple-threshold-keys">Simple Threshold Keys</a>
+        or
+        <a href="#dkg">DKG</a>.
+        </p>
+        <input class="mc-hex" placeholder="eg 800bfc9...">
+
+        <p>
+        Input: Message can be any ascii input.
+        Copy and Paste from a text editor rather than typing manually is
+        recommended here.
+        </p>
+        <input class="msg" placeholder="eg This group formed in August 2020">
+
+        <p>
+        Output: Signature Shares. These are combined into the group signature
+        shown below.
+        </p>
+        <textarea class="sig-shares"></textarea>
+
+        <p>
+        Output: Signature. This can be used with the
+        <a href="simple-threshold-keys">Group Master Public Key</a>
+        and the message to
+        <a href="#verify">verify</a>
+        the message was signed by at least
+        m-of-n members of the group.
+        If less than m signatures are combined the signature will be invalid.
+        </p>
+        <input class="sig">
 
     </div>
 
@@ -545,6 +582,7 @@
     <script src="js/decrypt.js"></script>
     <script src="js/simple_threshold_keys.js"></script>
     <script src="js/dkg.js"></script>
+    <script src="js/sign_group_message.js"></script>
 
 </body>
 </html>
