@@ -10,7 +10,7 @@ const MAX_ROW_SIZE: usize = 360;
 const MAX_COMMITMENT_SIZE: usize = 536;
 const MAX_SHARES: usize = MAX_NODES * MAX_NODES;
 const ROW_BYTES: usize = MAX_ROW_SIZE * MAX_SHARES;
-const COMMITMENT_BYTES: usize = MAX_COMMITMENT_SIZE * MAX_NODES;
+const BIVAR_COMMITMENTS_SIZE: usize = MAX_COMMITMENT_SIZE * MAX_NODES;
 
 static mut SK_BYTES: [u8; 32] = [0; 32];
 static mut PK_BYTES: [u8; 48] = [0; 48];
@@ -29,6 +29,7 @@ static mut RNG_INDEX: usize = 0;
 static mut RNG_NEXT_COUNT: usize = 0;
 // Poly which can be converted into SecretKeySet
 // Threshold of 10 gives poly size of 360 bytes when serialized
+// Threshold of 10 gives commitment size of 536 bytes when serialized
 static mut POLY_BYTES: [u8; 360] = [0; 360];
 static mut MSK_BYTES: [u8; 32] = [0; 32];
 static mut MPK_BYTES: [u8; 48] = [0; 48];
@@ -38,7 +39,7 @@ static mut PKSHARE_BYTES: [u8; 48] = [0; 48];
 // Threshold of 10 gives row size of 360 bytes when serialized
 // Threshold of 10 gives commitment size of 3184 bytes when serialized
 static mut BIVAR_ROW_BYTES: [u8; ROW_BYTES] = [0; ROW_BYTES];
-static mut BIVAR_COMMITMENT_BYTES: [u8; COMMITMENT_BYTES] = [0; COMMITMENT_BYTES];
+static mut BIVAR_COMMITMENTS_BYTES: [u8; BIVAR_COMMITMENTS_SIZE] = [0; BIVAR_COMMITMENTS_SIZE];
 static mut BIVAR_SKS_BYTES: [u8; 32 * MAX_NODES] = [0; 32 * MAX_NODES];
 
 #[wasm_bindgen]
@@ -188,17 +189,17 @@ pub fn get_bivar_row_byte(i: usize, from_node: usize, to_node: usize) -> u8 {
     }
 }
 #[wasm_bindgen]
-pub fn set_bivar_commitment_byte(i: usize, from_node: usize, v: u8) {
+pub fn set_bivar_commitments_byte(i: usize, from_node: usize, v: u8) {
     unsafe {
         let commitment_byte_start = from_node * MAX_COMMITMENT_SIZE;
-        BIVAR_COMMITMENT_BYTES[commitment_byte_start + i] = v;
+        BIVAR_COMMITMENTS_BYTES[commitment_byte_start + i] = v;
     }
 }
 #[wasm_bindgen]
-pub fn get_bivar_commitment_byte(i: usize, from_node: usize) -> u8 {
+pub fn get_bivar_commitments_byte(i: usize, from_node: usize) -> u8 {
     unsafe {
         let commitment_byte_start = from_node * MAX_COMMITMENT_SIZE;
-        BIVAR_COMMITMENT_BYTES[commitment_byte_start + i]
+        BIVAR_COMMITMENTS_BYTES[commitment_byte_start + i]
     }
 }
 #[wasm_bindgen]
@@ -414,7 +415,7 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
             let commitment = bivar.commitment().row(0);
             let commitment_vec = bincode::serialize(&commitment).unwrap();
             for i in 0..commitment_vec.len() {
-                set_bivar_commitment_byte(i, from_node, commitment_vec[i]);
+                set_bivar_commitments_byte(i, from_node, commitment_vec[i]);
             }
             // update the group master public key with this commitment data
             mpk_commitment += commitment;

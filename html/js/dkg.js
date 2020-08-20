@@ -20,7 +20,7 @@
         let bytesPerCommitment = commitment_sizes_by_threshold[threshold];
         let commitmentBytes = [];
         for (let i=0; i<bytesPerCommitment; i++) {
-            let commitmentByte = wasmExports.get_bivar_commitment_byte(i, from);
+            let commitmentByte = wasmExports.get_bivar_commitments_byte(i, from);
             commitmentBytes.push(commitmentByte);
         }
         self.shareCreationHex = uint8ArrayToHex(commitmentBytes);
