@@ -162,7 +162,8 @@ this.decrypt = function(s, c) {
 
 this.generate_poly = function(threshold) {
     wasmHelpers.set_rng_values();
-    let polySize = wasmExports.generate_poly(threshold);
+    let polySize = poly_sizes_by_threshold[threshold];
+    wasmExports.generate_poly(threshold);
     let polyBytes = [];
     for (let i=0; i<polySize; i++) {
         let polyByte = wasmExports.get_poly_byte(i);

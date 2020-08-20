@@ -321,7 +321,7 @@ pub fn decrypt(ct_size: usize) -> usize {
 }
 
 #[wasm_bindgen]
-pub fn generate_poly(threshold: usize) -> usize {
+pub fn generate_poly(threshold: usize) {
     unsafe {
         let mut rng = ExternalRng(0);
         let poly = Poly::random(threshold, &mut rng);
@@ -329,7 +329,6 @@ pub fn generate_poly(threshold: usize) -> usize {
         for i in 0..poly_vec.len() {
             POLY_BYTES[i] = poly_vec[i];
         }
-        return poly_vec.len()
     }
 }
 
