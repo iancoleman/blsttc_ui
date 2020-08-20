@@ -2,7 +2,7 @@
 
 DOM.stk = {}; // simple threshold keys
 DOM.stk.generate = document.querySelectorAll("#simple-threshold-keys .generate")[0];
-DOM.stk.threshold = document.querySelectorAll("#simple-threshold-keys .threshold")[0];
+DOM.stk.m = document.querySelectorAll("#simple-threshold-keys .m")[0];
 DOM.stk.polyHex = document.querySelectorAll("#simple-threshold-keys .poly-hex")[0];
 DOM.stk.mskHex = document.querySelectorAll("#simple-threshold-keys .msk-hex")[0];
 DOM.stk.mpkHex = document.querySelectorAll("#simple-threshold-keys .mpk-hex")[0];
@@ -15,7 +15,8 @@ DOM.stk.polyHex.addEventListener("input", deriveStk);
 DOM.stk.totalKeys.addEventListener("input", deriveStk);
 
 function generatePoly() {
-    let threshold = parseInt(DOM.stk.threshold.value);
+    let m = parseInt(DOM.stk.m.value);
+    let threshold = m - 1;
     let polyBytes = wasmHelpers.generate_poly(threshold);
     let polyHex = uint8ArrayToHex(polyBytes);
     DOM.stk.polyHex.value = polyHex;
@@ -32,7 +33,7 @@ function deriveStk() {
     }
     // get threshold
     let threshold = wasmExports.get_poly_degree();
-    DOM.stk.threshold.value = threshold;
+    DOM.stk.m.value = threshold + 1;
     // derive master keys, ie index 0
     let mkIndex = 0;
     wasmExports.derive_master_key();

@@ -174,8 +174,10 @@
 
         <p>
         Input: Poly Hex (as per bincode serialization), or
-        <button class="generate">generate</button> a random poly with threshold
-        <input class="threshold" value="3" type="number" min="2" max="10">
+        <button class="generate">generate</button> a random poly needing at
+        least
+        <input class="m" value="3" type="number" min="2" max="10">
+        keys to sign or decrypt a message
         (this is the m in m-of-n). Minimum 2, maximum 10. Make a secure backup
         of poly if you want to derive key shares in the future.
         </p>
@@ -260,7 +262,7 @@
         a group of
         <input class="total-nodes" type="number" min="3" max="10" value="4">
         nodes with at least
-        <input class="threshold" type="number" min="2" max="10" value="2">
+        <input class="m" type="number" min="2" max="10" value="2">
         nodes required to sign or decrypt messages (maximum 10 nodes).
         </p>
 

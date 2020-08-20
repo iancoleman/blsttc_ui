@@ -211,7 +211,7 @@
     DOM.dkg = document.querySelectorAll("#dkg-keys")[0];
     DOM.dkg.generate = DOM.dkg.querySelectorAll(".generate")[0];
     DOM.dkg.totalNodes = DOM.dkg.querySelectorAll(".total-nodes")[0];
-    DOM.dkg.threshold = DOM.dkg.querySelectorAll(".threshold")[0];
+    DOM.dkg.m = DOM.dkg.querySelectorAll(".m")[0];
     DOM.dkg.shares = DOM.dkg.querySelectorAll(".shares tbody")[0];
     DOM.dkg.senderId = DOM.dkg.querySelectorAll(".sender-id");
     DOM.dkg.receiverId = DOM.dkg.querySelectorAll(".receiver-id");
@@ -348,7 +348,8 @@
         wasmHelpers.set_rng_values();
         // get contribution parameters
         let totalNodes = getTotalNodes();
-        let threshold = parseInt(DOM.dkg.threshold.value);
+        let m = parseInt(DOM.dkg.m.value);
+        let threshold = m - 1;
         // validate values
         if (totalNodes < 2) {
             showError("Must be at least 2 nodes");
@@ -359,10 +360,10 @@
             return;
         }
         if (threshold < 1) {
-            showError("Must be at least 1 signing/decrypting node");
+            showError("Must be at least 2 signing/decrypting nodes");
             return;
         }
-        if (threshold > totalNodes) {
+        if (m > totalNodes) {
             showError("Cannot have higher threshold than total nodes");
             return;
         }
