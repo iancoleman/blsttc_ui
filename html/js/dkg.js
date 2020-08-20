@@ -220,6 +220,7 @@
     DOM.dkg.sharesReceived = DOM.dkg.querySelectorAll(".shares-received")[0];
     DOM.dkg.skshareHex = DOM.dkg.querySelectorAll(".skshare-hex")[0];
     DOM.dkg.mpkHex = DOM.dkg.querySelectorAll(".mpk-hex")[0];
+    DOM.dkg.mcHex = DOM.dkg.querySelectorAll(".mc-hex")[0];
     DOM.dkg.allSkshares = DOM.dkg.querySelectorAll(".all-skshares")[0];
     DOM.dkg.allShareCreations = DOM.dkg.querySelectorAll(".all-share-creations")[0];
     DOM.dkg.mskPolyHex = DOM.dkg.querySelectorAll(".msk-poly-hex")[0];
@@ -338,6 +339,7 @@
         shares = [];
         DOM.dkg.shares.innerHTML = "";
         DOM.dkg.mpkHex.value = "";
+        DOM.dkg.mcHex.value = "";
         DOM.dkg.allSkshares.value = "";
         DOM.dkg.allShareCreations.value = "";
         DOM.dkg.mskPolyHex.value = "";
@@ -395,6 +397,10 @@
         }
         let mpkHex = uint8ArrayToHex(mpkBytes);
         DOM.dkg.mpkHex.value = mpkHex;
+        // show group master commitment
+        let mcBytes = wasmHelpers.get_mc_bytes(threshold);
+        let mcHex = uint8ArrayToHex(mcBytes);
+        DOM.dkg.mcHex.value = mcHex;
         // show all skshares
         let skshares = "";
         for (let i=0; i<totalNodes; i++) {

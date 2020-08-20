@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::*;
 use threshold_crypto::{Ciphertext, Fr, PublicKey, PublicKeySet, SecretKey, SecretKeySet, SecretKeyShare, Signature, poly::{
     Poly,
     BivarPoly,
+    Commitment,
 }, serde_impl::SerdeSecret, ff::Field};
 
 // DKG constants
@@ -33,6 +34,7 @@ static mut RNG_NEXT_COUNT: usize = 0;
 static mut POLY_BYTES: [u8; 360] = [0; 360];
 static mut MSK_BYTES: [u8; 32] = [0; 32];
 static mut MPK_BYTES: [u8; 48] = [0; 48];
+static mut MC_BYTES: [u8; 536] = [0; 536];
 static mut SKSHARE_BYTES: [u8; 32] = [0; 32];
 static mut PKSHARE_BYTES: [u8; 48] = [0; 48];
 // DKG variables
@@ -146,6 +148,18 @@ pub fn set_mpk_byte(i: usize, v: u8) {
 pub fn get_mpk_byte(i: usize) -> u8 {
     unsafe {
         MPK_BYTES[i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_mc_byte(i: usize, v: u8) {
+    unsafe {
+        MC_BYTES[i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_mc_byte(i: usize) -> u8 {
+    unsafe {
+        MC_BYTES[i]
     }
 }
 #[wasm_bindgen]
@@ -331,6 +345,7 @@ pub fn get_poly_degree() -> usize {
 pub fn derive_master_key() {
     unsafe {
         let poly: Poly = bincode::deserialize(&POLY_BYTES).unwrap();
+        let commitment = poly.commitment();
         // see https://github.com/poanetwork/threshold_crypto/blob/7709462f2df487ada3bb3243060504b5881f2628/src/lib.rs#L685
         let mut fr = poly.evaluate(0);
         let msk = SecretKey::from_mut(&mut fr);
@@ -346,6 +361,11 @@ pub fn derive_master_key() {
         let mpk_vec = mpk.to_bytes().to_vec();
         for i in 0..mpk_vec.len() {
             MPK_BYTES[i] = mpk_vec[i];
+        }
+        // master commitment
+        let commitment_vec = bincode::serialize(&commitment).unwrap();
+        for i in 0..commitment_vec.len() {
+            set_mc_byte(i, commitment_vec[i]);
         }
     }
 }
@@ -412,13 +432,13 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
             // In BLS-DKG library the commitment itself is shared, but only
             // commitment.row(0) is used in calculation of the master
             // public key so we'll only store the commitment.row(0).
-            let commitment = bivar.commitment().row(0);
+            let commitment = bivar.commitment();
             let commitment_vec = bincode::serialize(&commitment).unwrap();
             for i in 0..commitment_vec.len() {
                 set_bivar_commitments_byte(i, from_node, commitment_vec[i]);
             }
             // update the group master public key with this commitment data
-            mpk_commitment += commitment;
+            mpk_commitment += commitment.row(0);
             // Calculate the secret key parts to be shared with other nodes
             for to_node in 0..total_nodes {
                 // row (secret part)
@@ -431,6 +451,11 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
                     set_bivar_row_byte(i, from_node, to_node, row_vec[i]);
                 }
             }
+        }
+        // save the master commitment
+        let mpk_commitment_vec = bincode::serialize(&mpk_commitment).unwrap();
+        for i in 0..mpk_commitment_vec.len() {
+            set_mc_byte(i, mpk_commitment_vec[i]);
         }
         // save the group master public key
         let mpkset = PublicKeySet::from(mpk_commitment);

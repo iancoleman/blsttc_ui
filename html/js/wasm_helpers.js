@@ -189,6 +189,16 @@ this.get_mpk_bytes = function() {
     return mpkBytes;
 }
 
+this.get_mc_bytes = function(threshold) {
+    let mcBytes = [];
+    let mcSize = commitment_sizes_by_threshold[threshold];
+    for (let i=0; i<mcSize; i++) {
+        let mcByte = wasmExports.get_mc_byte(i);
+        mcBytes.push(mcByte);
+    }
+    return mcBytes;
+}
+
 this.get_skshare = function() {
     let skshareBytes = [];
     for (let i=0; i<skLen; i++) {

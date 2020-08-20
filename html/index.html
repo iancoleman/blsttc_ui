@@ -200,6 +200,13 @@
         <input class="mpk-hex" placeholder="eg a32fc9...">
 
         <p>
+        Output: Master Commitment Hex.
+        This is the basis of the Master Public Key and is needed for
+        combining signature or decryption shares.
+        </p>
+        <input class="mc-hex" placeholder="eg b43a04...">
+
+        <p>
         Show
         <input class="total-keys" value="7" type="number" min="2" max="10">
         key shares (this is the n in m-of-n).
@@ -274,6 +281,13 @@
         shown here because it's known by all participants.
         </p>
         <input class="mpk-hex" placeholder="eg a32fc9...">
+
+        <p>
+        Output: The group master commitment used when decrypting and signing
+        messages. This is generated in Step 5, shown below the table, but is
+        shown here because it's known by all participants.
+        </p>
+        <input class="mc-hex" placeholder="eg b43ad0...">
 
         <p>
         Hover on a cell, the details of the relevant shares will

@@ -6,6 +6,7 @@ DOM.stk.m = document.querySelectorAll("#simple-threshold-keys .m")[0];
 DOM.stk.polyHex = document.querySelectorAll("#simple-threshold-keys .poly-hex")[0];
 DOM.stk.mskHex = document.querySelectorAll("#simple-threshold-keys .msk-hex")[0];
 DOM.stk.mpkHex = document.querySelectorAll("#simple-threshold-keys .mpk-hex")[0];
+DOM.stk.mcHex = document.querySelectorAll("#simple-threshold-keys .mc-hex")[0];
 DOM.stk.totalKeys = document.querySelectorAll("#simple-threshold-keys .total-keys")[0];
 DOM.stk.skset = document.querySelectorAll("#simple-threshold-keys .skset")[0];
 DOM.stk.pkset = document.querySelectorAll("#simple-threshold-keys .pkset")[0];
@@ -45,6 +46,10 @@ function deriveStk() {
     let mpkBytes = wasmHelpers.get_mpk_bytes();
     let mpkHex = uint8ArrayToHex(mpkBytes);
     DOM.stk.mpkHex.value = mpkHex;
+    // show master commitment
+    let mcBytes = wasmHelpers.get_mc_bytes(threshold);
+    let mcHex = uint8ArrayToHex(mcBytes);
+    DOM.stk.mcHex.value = mcHex;
     // derive keys, ie index 1 to N
     let n = parseInt(DOM.stk.totalKeys.value);
     let skshares = "";
