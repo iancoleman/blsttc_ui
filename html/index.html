@@ -446,6 +446,10 @@
         <p>
         Input: Secret Key Shares. There must be at least m secret keys
         of an m-of-n group to be able to sign the message.
+        The keys do not need to be sequential or in any particular order.
+        The format of each line should match those generated in
+        Simple Threshold Keys or DKG, ie
+        <code>shareIndex:hexEncodedSecretKey</code>.
         </p>
         <textarea class="skshares"></textarea>
 
@@ -479,6 +483,9 @@
         the message was signed by at least
         m-of-n members of the group.
         If less than m signatures are combined the signature will be invalid.
+        Any combination of signers will produce the same signature. This means
+        the signature can serve as a pseudorandom number unknown to anyone
+        until m participants agree to reveal it.
         </p>
         <input class="sig">
 
