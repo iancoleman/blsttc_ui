@@ -434,7 +434,8 @@
         // show all bivar commitments
         let bivarCommitments = "";
         for (let i=0; i<totalNodes; i++) {
-            bivarCommitments += shares[i*totalNodes].shareCreationHex + "\n";
+            let scHex = shares[i*totalNodes].shareCreationHex;
+            bivarCommitments += new OrderedShare(i, scHex).toString() + "\n";
         }
         DOM.dkg.allShareCreations.value = bivarCommitments.trim();
         // show master secret key
