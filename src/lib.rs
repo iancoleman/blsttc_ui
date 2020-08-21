@@ -6,6 +6,10 @@ use threshold_crypto::{Ciphertext, Fr, PublicKey, PublicKeySet, SecretKey, Secre
     Commitment,
 }, serde_impl::SerdeSecret, ff::Field};
 
+const SK_SIZE: usize = 32;
+const PK_SIZE: usize = 48;
+const SIG_SIZE: usize = 96;
+
 // DKG constants
 const MAX_NODES: usize = 10;
 const MAX_ROW_SIZE: usize = 360;
@@ -14,9 +18,9 @@ const MAX_SHARES: usize = MAX_NODES * MAX_NODES;
 const ROW_BYTES: usize = MAX_ROW_SIZE * MAX_SHARES;
 const BIVAR_COMMITMENTS_SIZE: usize = MAX_COMMITMENT_SIZE * MAX_NODES;
 
-static mut SK_BYTES: [u8; 32] = [0; 32];
-static mut PK_BYTES: [u8; 48] = [0; 48];
-static mut SIG_BYTES: [u8; 96] = [0; 96];
+static mut SK_BYTES: [u8; SK_SIZE] = [0; SK_SIZE];
+static mut PK_BYTES: [u8; PK_SIZE] = [0; PK_SIZE];
+static mut SIG_BYTES: [u8; SIG_SIZE] = [0; SIG_SIZE];
 static mut MSG_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
 static mut CT_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
 // rng.next() is called 4 times during encrypt
@@ -33,20 +37,20 @@ static mut RNG_NEXT_COUNT: usize = 0;
 // Threshold of 10 gives poly size of 360 bytes when serialized
 // Threshold of 10 gives commitment size of 536 bytes when serialized
 static mut POLY_BYTES: [u8; 360] = [0; 360];
-static mut MSK_BYTES: [u8; 32] = [0; 32];
-static mut MPK_BYTES: [u8; 48] = [0; 48];
+static mut MSK_BYTES: [u8; SK_SIZE] = [0; SK_SIZE];
+static mut MPK_BYTES: [u8; PK_SIZE] = [0; PK_SIZE];
 static mut MC_BYTES: [u8; 536] = [0; 536];
-static mut SKSHARE_BYTES: [u8; 32] = [0; 32];
-static mut PKSHARE_BYTES: [u8; 48] = [0; 48];
+static mut SKSHARE_BYTES: [u8; SK_SIZE] = [0; SK_SIZE];
+static mut PKSHARE_BYTES: [u8; PK_SIZE] = [0; PK_SIZE];
 // DKG variables
 // Threshold of 10 gives row size of 360 bytes when serialized
 // Threshold of 10 gives commitment size of 3184 bytes when serialized
 static mut BIVAR_ROW_BYTES: [u8; ROW_BYTES] = [0; ROW_BYTES];
 static mut BIVAR_COMMITMENTS_BYTES: [u8; BIVAR_COMMITMENTS_SIZE] = [0; BIVAR_COMMITMENTS_SIZE];
-static mut BIVAR_SKS_BYTES: [u8; 32 * MAX_NODES] = [0; 32 * MAX_NODES];
-static mut BIVAR_PKS_BYTES: [u8; 48 * MAX_NODES] = [0; 48 * MAX_NODES];
+static mut BIVAR_SKS_BYTES: [u8; SK_SIZE * MAX_NODES] = [0; SK_SIZE * MAX_NODES];
+static mut BIVAR_PKS_BYTES: [u8; PK_SIZE * MAX_NODES] = [0; PK_SIZE * MAX_NODES];
 // Group signing variables
-static mut SIGNATURE_SHARE_BYTES: [u8; 96 * MAX_NODES] = [0; 96 * MAX_NODES];
+static mut SIGNATURE_SHARE_BYTES: [u8; SIG_SIZE * MAX_NODES] = [0; SIG_SIZE * MAX_NODES];
 static mut SHARE_INDEXES: [usize; MAX_NODES] = [0; MAX_NODES];
 
 #[wasm_bindgen]
@@ -117,6 +121,12 @@ pub fn set_ct_byte(i: usize, v: u8) {
 pub fn get_ct_byte(i: usize) -> u8 {
     unsafe {
         CT_BYTES[i]
+    }
+}
+#[wasm_bindgen]
+pub fn get_rng_next_count() -> usize {
+    unsafe {
+        RNG_NEXT_COUNT
     }
 }
 #[wasm_bindgen]
@@ -224,42 +234,42 @@ pub fn get_bivar_commitments_byte(i: usize, from_node: usize) -> u8 {
 #[wasm_bindgen]
 pub fn set_bivar_sks_byte(i: usize, node_index: usize, v: u8) {
     unsafe {
-        let sks_byte_start = 32 * node_index;
+        let sks_byte_start = SK_SIZE * node_index;
         BIVAR_SKS_BYTES[sks_byte_start + i] = v;
     }
 }
 #[wasm_bindgen]
 pub fn get_bivar_sks_byte(i: usize, node_index: usize) -> u8 {
     unsafe {
-        let sks_byte_start = 32 * node_index;
+        let sks_byte_start = SK_SIZE * node_index;
         BIVAR_SKS_BYTES[sks_byte_start + i]
     }
 }
 #[wasm_bindgen]
 pub fn set_bivar_pks_byte(i: usize, node_index: usize, v: u8) {
     unsafe {
-        let pks_byte_start = 48 * node_index;
+        let pks_byte_start = PK_SIZE * node_index;
         BIVAR_PKS_BYTES[pks_byte_start + i] = v;
     }
 }
 #[wasm_bindgen]
 pub fn get_bivar_pks_byte(i: usize, node_index: usize) -> u8 {
     unsafe {
-        let pks_byte_start = 48 * node_index;
+        let pks_byte_start = PK_SIZE * node_index;
         BIVAR_PKS_BYTES[pks_byte_start + i]
     }
 }
 #[wasm_bindgen]
 pub fn set_signature_share_byte(i: usize, sig_index: usize, v: u8) {
     unsafe {
-        let sig_byte_start = 96 * sig_index;
+        let sig_byte_start = SIG_SIZE * sig_index;
         SIGNATURE_SHARE_BYTES[sig_byte_start + i] = v;
     }
 }
 #[wasm_bindgen]
 pub fn get_signature_share_byte(i: usize, sig_index: usize) -> u8 {
     unsafe {
-        let sig_byte_start = 96 * sig_index;
+        let sig_byte_start = SIG_SIZE * sig_index;
         SIGNATURE_SHARE_BYTES[sig_byte_start + i]
     }
 }
@@ -280,165 +290,177 @@ pub fn get_share_indexes(i: usize) -> usize {
 // Requires sk_bytes to be already set.
 // Puts pk result into pk_bytes.
 pub fn derive_pk_from_sk() {
-    unsafe {
-        let sk: SecretKey = bincode::deserialize(&SK_BYTES).unwrap();
-        let pk_vec = sk.public_key().to_bytes().to_vec();
-        for i in 0..pk_vec.len() {
-            PK_BYTES[i] = pk_vec[i];
-        }
+    let mut sk_bytes: [u8; SK_SIZE] = [0; SK_SIZE];
+    for i in 0..SK_SIZE {
+        sk_bytes[i] = get_sk_byte(i);
+    }
+    let sk: SecretKey = bincode::deserialize(&sk_bytes).unwrap();
+    let pk_vec = sk.public_key().to_bytes().to_vec();
+    for i in 0..pk_vec.len() {
+        set_pk_byte(i, pk_vec[i]);
     }
 }
 
 #[wasm_bindgen]
 pub fn sign_msg(msg_size: usize) {
-    unsafe {
-        // create secret key vec from input parameters
-        let sk: SecretKey = bincode::deserialize(&SK_BYTES).unwrap();
-        // create msg vec from input parameters
-        let mut msg = Vec::new();
-        for i in 0..msg_size {
-            msg.push(MSG_BYTES[i]);
-        }
-        let sig = sk.sign(msg);
-        let sig_vec = sig.to_bytes().to_vec();
-        for i in 0..sig_vec.len() {
-            SIG_BYTES[i] = sig_vec[i];
-        }
+    // create secret key vec from input parameters
+    let mut sk_bytes: [u8; SK_SIZE] = [0; SK_SIZE];
+    for i in 0..SK_SIZE {
+        sk_bytes[i] = get_sk_byte(i);
+    }
+    let sk: SecretKey = bincode::deserialize(&sk_bytes).unwrap();
+    // create msg vec from input parameters
+    let mut msg = Vec::new();
+    for i in 0..msg_size {
+        let msg_byte = get_msg_byte(i);
+        msg.push(msg_byte);
+    }
+    let sig = sk.sign(msg);
+    let sig_vec = sig.to_bytes().to_vec();
+    for i in 0..sig_vec.len() {
+        set_sig_byte(i, sig_vec[i]);
     }
 }
 
 #[wasm_bindgen]
 pub fn verify(msg_size: usize) -> bool {
-    unsafe {
-        // create public key vec from input parameters
-        let pk = PublicKey::from_bytes(PK_BYTES).unwrap();
-        // create signature vec from input parameters
-        let sig = Signature::from_bytes(SIG_BYTES).unwrap();
-        // create msg vec from input parameters
-        let mut msg = Vec::new();
-        for i in 0..msg_size {
-            msg.push(MSG_BYTES[i]);
-        }
-        return pk.verify(&sig, msg)
+    // create public key vec from input parameters
+    let mut pk_bytes: [u8; PK_SIZE] = [0; PK_SIZE];
+    for i in 0..PK_SIZE {
+        pk_bytes[i] = get_pk_byte(i);
     }
+    let pk = PublicKey::from_bytes(pk_bytes).unwrap();
+    // create signature vec from input parameters
+    let mut sig_bytes: [u8; SIG_SIZE] = [0; SIG_SIZE];
+    for i in 0..SIG_SIZE {
+        sig_bytes[i] = get_sig_byte(i);
+    }
+    let sig = Signature::from_bytes(sig_bytes).unwrap();
+    // create msg vec from input parameters
+    let mut msg = Vec::new();
+    for i in 0..msg_size {
+        msg.push(get_msg_byte(i));
+    }
+    return pk.verify(&sig, msg)
 }
 
 #[wasm_bindgen]
 pub fn encrypt(msg_size: usize) -> usize {
-    unsafe {
-        // create public key vec from input parameters
-        let pk = PublicKey::from_bytes(PK_BYTES).unwrap();
-        // create msg vec from input parameters
-        let mut msg = Vec::new();
-        for i in 0..msg_size {
-            msg.push(MSG_BYTES[i]);
-        }
-        let mut rng = ExternalRng(0);
-        let ct = pk.encrypt_with_rng(&mut rng, msg);
-        let ct_vec = bincode::serialize(&ct).unwrap();
-        for i in 0..ct_vec.len() {
-            CT_BYTES[i] = ct_vec[i];
-        }
-        return ct_vec.len()
+    // create public key vec from input parameters
+    let mut pk_bytes: [u8; PK_SIZE] = [0; PK_SIZE];
+    for i in 0..PK_SIZE {
+        pk_bytes[i] = get_pk_byte(i);
     }
+    let pk = PublicKey::from_bytes(pk_bytes).unwrap();
+    // create msg vec from input parameters
+    let mut msg = Vec::new();
+    for i in 0..msg_size {
+        msg.push(get_msg_byte(i));
+    }
+    let mut rng = ExternalRng(0);
+    let ct = pk.encrypt_with_rng(&mut rng, msg);
+    let ct_vec = bincode::serialize(&ct).unwrap();
+    for i in 0..ct_vec.len() {
+        set_ct_byte(i, ct_vec[i]);
+    }
+    return ct_vec.len()
 }
 
 #[wasm_bindgen]
 pub fn decrypt(ct_size: usize) -> usize {
-    unsafe {
-        // create secret key vec from input parameters
-        let sk: SecretKey = bincode::deserialize(&SK_BYTES).unwrap();
-        // create ct vec from input parameters
-        let mut ct_vec = Vec::new();
-        for i in 0..ct_size {
-            ct_vec.push(CT_BYTES[i]);
-        }
-        let ct: Ciphertext = bincode::deserialize(&ct_vec).unwrap();
-        if !ct.verify() {
-            return 0;
-        }
-        let msg = sk.decrypt(&ct).unwrap();
-        for i in 0..msg.len() {
-            MSG_BYTES[i] = msg[i];
-        }
-        return msg.len()
+    // create secret key vec from input parameters
+    let mut sk_bytes: [u8; SK_SIZE] = [0; SK_SIZE];
+    for i in 0..SK_SIZE {
+        sk_bytes[i] = get_sk_byte(i);
     }
+    let sk: SecretKey = bincode::deserialize(&sk_bytes).unwrap();
+    // create ct vec from input parameters
+    let mut ct_vec = Vec::new();
+    for i in 0..ct_size {
+        ct_vec.push(get_ct_byte(i));
+    }
+    let ct: Ciphertext = bincode::deserialize(&ct_vec).unwrap();
+    if !ct.verify() {
+        return 0;
+    }
+    let msg = sk.decrypt(&ct).unwrap();
+    for i in 0..msg.len() {
+        set_msk_byte(i, msg[i]);
+    }
+    return msg.len()
 }
 
 #[wasm_bindgen]
 pub fn generate_poly(threshold: usize) {
-    unsafe {
-        let mut rng = ExternalRng(0);
-        let poly = Poly::random(threshold, &mut rng);
-        let poly_vec = bincode::serialize(&poly).unwrap();
-        for i in 0..poly_vec.len() {
-            POLY_BYTES[i] = poly_vec[i];
-        }
+    let mut rng = ExternalRng(0);
+    let poly = Poly::random(threshold, &mut rng);
+    let poly_vec = bincode::serialize(&poly).unwrap();
+    for i in 0..poly_vec.len() {
+        set_poly_byte(i, poly_vec[i]);
     }
 }
 
 #[wasm_bindgen]
-pub fn get_poly_degree() -> usize {
-    unsafe {
-        let poly: Poly = bincode::deserialize(&POLY_BYTES).unwrap();
-        poly.degree()
+pub fn get_poly_degree(poly_size: usize) -> usize {
+    let mut poly_bytes = Vec::new();
+    for i in 0..poly_size {
+        poly_bytes.push(get_poly_byte(i));
+    }
+    let poly: Poly = bincode::deserialize(&poly_bytes).unwrap();
+    poly.degree()
+}
+
+#[wasm_bindgen]
+pub fn derive_master_key(poly_size: usize) {
+    let mut poly_bytes = Vec::new();
+    for i in 0..poly_size {
+        poly_bytes.push(get_poly_byte(i));
+    }
+    let poly: Poly = bincode::deserialize(&poly_bytes).unwrap();
+    let commitment = poly.commitment();
+    // see https://github.com/poanetwork/threshold_crypto/blob/7709462f2df487ada3bb3243060504b5881f2628/src/lib.rs#L685
+    let mut fr = poly.evaluate(0);
+    let msk = SecretKey::from_mut(&mut fr);
+    let msk_vec = bincode::serialize(&SerdeSecret(&msk)).unwrap();
+    for i in 0..msk_vec.len() {
+        set_msk_byte(i, msk_vec[i]);
+    }
+    //// public key
+    // could also use let mpk = msk.public_key();
+    let skset: SecretKeySet = SecretKeySet::from(poly);
+    let pkset = skset.public_keys();
+    let mpk = pkset.public_key();
+    let mpk_vec = mpk.to_bytes().to_vec();
+    for i in 0..mpk_vec.len() {
+        set_mpk_byte(i, mpk_vec[i]);
+    }
+    // master commitment
+    let commitment_vec = bincode::serialize(&commitment).unwrap();
+    for i in 0..commitment_vec.len() {
+        set_mc_byte(i, commitment_vec[i]);
     }
 }
 
 #[wasm_bindgen]
-pub fn derive_master_key() {
-    unsafe {
-        let poly: Poly = bincode::deserialize(&POLY_BYTES).unwrap();
-        let commitment = poly.commitment();
-        // see https://github.com/poanetwork/threshold_crypto/blob/7709462f2df487ada3bb3243060504b5881f2628/src/lib.rs#L685
-        let mut fr = poly.evaluate(0);
-        let msk = SecretKey::from_mut(&mut fr);
-        let msk_vec = bincode::serialize(&SerdeSecret(&msk)).unwrap();
-        for i in 0..msk_vec.len() {
-            MSK_BYTES[i] = msk_vec[i];
-        }
-        //// public key
-        // could also use let mpk = msk.public_key();
-        let skset: SecretKeySet = SecretKeySet::from(poly);
-        let pkset = skset.public_keys();
-        let mpk = pkset.public_key();
-        let mpk_vec = mpk.to_bytes().to_vec();
-        for i in 0..mpk_vec.len() {
-            MPK_BYTES[i] = mpk_vec[i];
-        }
-        // master commitment
-        let commitment_vec = bincode::serialize(&commitment).unwrap();
-        for i in 0..commitment_vec.len() {
-            set_mc_byte(i, commitment_vec[i]);
-        }
+pub fn derive_key_share(i: usize, poly_size: usize) {
+    let mut poly_bytes = Vec::new();
+    for i in 0..poly_size {
+        poly_bytes.push(get_poly_byte(i));
     }
-}
-
-#[wasm_bindgen]
-pub fn derive_key_share(i: usize) {
-    unsafe {
-        let poly: Poly = bincode::deserialize(&POLY_BYTES).unwrap();
-        // secret key
-        let skset: SecretKeySet = SecretKeySet::from(poly);
-        let skshare = skset.secret_key_share(i);
-        let skshare_vec = bincode::serialize(&SerdeSecret(&skshare)).unwrap();
-        for i in 0..skshare_vec.len() {
-            SKSHARE_BYTES[i] = skshare_vec[i];
-        }
-        // public key
-        let pkset = skset.public_keys();
-        let pkshare = pkset.public_key_share(i);
-        let pkshare_vec = pkshare.to_bytes().to_vec();
-        for i in 0..pkshare_vec.len() {
-            PKSHARE_BYTES[i] = pkshare_vec[i];
-        }
+    let poly: Poly = bincode::deserialize(&poly_bytes).unwrap();
+    // secret key
+    let skset: SecretKeySet = SecretKeySet::from(poly);
+    let skshare = skset.secret_key_share(i);
+    let skshare_vec = bincode::serialize(&SerdeSecret(&skshare)).unwrap();
+    for i in 0..skshare_vec.len() {
+        set_skshare_byte(i, skshare_vec[i]);
     }
-}
-
-#[wasm_bindgen]
-pub fn get_rng_next_count() -> usize {
-    unsafe {
-        RNG_NEXT_COUNT
+    // public key
+    let pkset = skset.public_keys();
+    let pkshare = pkset.public_key_share(i);
+    let pkshare_vec = pkshare.to_bytes().to_vec();
+    for i in 0..pkshare_vec.len() {
+        set_pkshare_byte(i, pkshare_vec[i]);
     }
 }
 
@@ -448,84 +470,82 @@ pub fn get_rng_next_count() -> usize {
 // Values are concatenated into the BYTES vectors.
 #[wasm_bindgen]
 pub fn generate_bivars(threshold: usize, total_nodes: usize) {
-    unsafe {
-        let mut rng = ExternalRng(0);
-        // Initialize the group master public key (a commitment, ie
-        // equivalent to a PublicKeySet which it is converted to at the end)
-        let mut mpk_commitment = Poly::zero().commitment();
-        // Initialize the group master secret key, which is never known to
-        // any node but is shown for information.
-        let mut msk = Poly::zero();
-        // Initialize each node secret key share
-        let mut secret_key_shares = Vec::new();
-        for _ in 0..total_nodes {
-            let sk_val = Fr::zero();
-            secret_key_shares.push(sk_val);
+    let mut rng = ExternalRng(0);
+    // Initialize the group master public key (a commitment, ie
+    // equivalent to a PublicKeySet which it is converted to at the end)
+    let mut mpk_commitment = Poly::zero().commitment();
+    // Initialize the group master secret key, which is never known to
+    // any node but is shown for information.
+    let mut msk = Poly::zero();
+    // Initialize each node secret key share
+    let mut secret_key_shares = Vec::new();
+    for _ in 0..total_nodes {
+        let sk_val = Fr::zero();
+        secret_key_shares.push(sk_val);
+    }
+    // Each node will create part of the group master public key
+    // and part of each other node secret key share.
+    for from_node in 0..total_nodes {
+        // The 'from' node creates a contribution which is a BivarPoly,
+        // from which rows (secret key shares) and
+        // the commitment (master public key part)
+        // can be calculated.
+        let bivar = BivarPoly::random(threshold, &mut rng);
+        // Add this to the secret key set
+        msk += bivar.row(0);
+        // commitment (public part)
+        // In BLS-DKG library the commitment itself is shared, but only
+        // commitment.row(0) is used in calculation of the master
+        // public key so we'll only store the commitment.row(0).
+        let commitment = bivar.commitment();
+        let commitment_vec = bincode::serialize(&commitment).unwrap();
+        for i in 0..commitment_vec.len() {
+            set_bivar_commitments_byte(i, from_node, commitment_vec[i]);
         }
-        // Each node will create part of the group master public key
-        // and part of each other node secret key share.
-        for from_node in 0..total_nodes {
-            // The 'from' node creates a contribution which is a BivarPoly,
-            // from which rows (secret key shares) and
-            // the commitment (master public key part)
-            // can be calculated.
-            let bivar = BivarPoly::random(threshold, &mut rng);
-            // Add this to the secret key set
-            msk += bivar.row(0);
-            // commitment (public part)
-            // In BLS-DKG library the commitment itself is shared, but only
-            // commitment.row(0) is used in calculation of the master
-            // public key so we'll only store the commitment.row(0).
-            let commitment = bivar.commitment();
-            let commitment_vec = bincode::serialize(&commitment).unwrap();
-            for i in 0..commitment_vec.len() {
-                set_bivar_commitments_byte(i, from_node, commitment_vec[i]);
-            }
-            // update the group master public key with this commitment data
-            mpk_commitment += commitment.row(0);
-            // Calculate the secret key parts to be shared with other nodes
-            for to_node in 0..total_nodes {
-                // row (secret part)
-                let row = bivar.row(to_node+1);
-                // add this to the secret key share for the to node
-                secret_key_shares[to_node].add_assign(&row.evaluate(0));
-                // record the row
-                let row_vec = bincode::serialize(&row).unwrap();
-                for i in 0..row_vec.len() {
-                    set_bivar_row_byte(i, from_node, to_node, row_vec[i]);
-                }
+        // update the group master public key with this commitment data
+        mpk_commitment += commitment.row(0);
+        // Calculate the secret key parts to be shared with other nodes
+        for to_node in 0..total_nodes {
+            // row (secret part)
+            let row = bivar.row(to_node+1);
+            // add this to the secret key share for the to node
+            secret_key_shares[to_node].add_assign(&row.evaluate(0));
+            // record the row
+            let row_vec = bincode::serialize(&row).unwrap();
+            for i in 0..row_vec.len() {
+                set_bivar_row_byte(i, from_node, to_node, row_vec[i]);
             }
         }
-        // save the master commitment
-        let mpk_commitment_vec = bincode::serialize(&mpk_commitment).unwrap();
-        for i in 0..mpk_commitment_vec.len() {
-            set_mc_byte(i, mpk_commitment_vec[i]);
+    }
+    // save the master commitment
+    let mpk_commitment_vec = bincode::serialize(&mpk_commitment).unwrap();
+    for i in 0..mpk_commitment_vec.len() {
+        set_mc_byte(i, mpk_commitment_vec[i]);
+    }
+    // save the group master public key
+    let mpkset = PublicKeySet::from(mpk_commitment);
+    let mpk = mpkset.public_key();
+    let mpk_vec = mpk.to_bytes().to_vec();
+    for i in 0..mpk_vec.len() {
+        set_mpk_byte(i, mpk_vec[i]);
+    }
+    // save the master secret key
+    let msk_vec = bincode::serialize(&msk).unwrap();
+    for i in 0..msk_vec.len() {
+        set_poly_byte(i, msk_vec[i]);
+    }
+    // save the secret and public key shares
+    for node_index in 0..total_nodes {
+        let mut sk_val = secret_key_shares[node_index];
+        let sk = SecretKeyShare::from_mut(&mut sk_val);
+        let sk_vec = bincode::serialize(&SerdeSecret(&sk)).unwrap();
+        for i in 0..sk_vec.len() {
+            set_bivar_sks_byte(i, node_index, sk_vec[i]);
         }
-        // save the group master public key
-        let mpkset = PublicKeySet::from(mpk_commitment);
-        let mpk = mpkset.public_key();
-        let mpk_vec = mpk.to_bytes().to_vec();
-        for i in 0..mpk_vec.len() {
-            MPK_BYTES[i] = mpk_vec[i];
-        }
-        // save the master secret key
-        let msk_vec = bincode::serialize(&msk).unwrap();
-        for i in 0..msk_vec.len() {
-            POLY_BYTES[i] = msk_vec[i];
-        }
-        // save the secret and public key shares
-        for node_index in 0..total_nodes {
-            let mut sk_val = secret_key_shares[node_index];
-            let sk = SecretKeyShare::from_mut(&mut sk_val);
-            let sk_vec = bincode::serialize(&SerdeSecret(&sk)).unwrap();
-            for i in 0..sk_vec.len() {
-                set_bivar_sks_byte(i, node_index, sk_vec[i]);
-            }
-            let pk = sk.public_key_share();
-            let pk_vec = pk.to_bytes().to_vec();
-            for i in 0..pk_vec.len() {
-                set_bivar_pks_byte(i, node_index, pk_vec[i]);
-            }
+        let pk = sk.public_key_share();
+        let pk_vec = pk.to_bytes().to_vec();
+        for i in 0..pk_vec.len() {
+            set_bivar_pks_byte(i, node_index, pk_vec[i]);
         }
     }
 }
@@ -534,34 +554,32 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
 // Depends on MC_BYTES being set to the correct master commitment
 // so the PublicKeySet can be created and the signature shares combined.
 pub fn combine_signature_shares(total_signatures: usize, commitment_size: usize) {
-    unsafe {
-        // read each signature
-        let mut sigs = BTreeMap::new();
-        for share_index in 0..total_signatures {
-            let index_in_group = get_share_indexes(share_index);
-            let mut sig_bytes: [u8; 96] = [0; 96];
-            for i in 0..96 {
-                let sig_byte = get_signature_share_byte(i, share_index);
-                sig_bytes[i] = sig_byte;
-            }
-            let sig = SignatureShare::from_bytes(sig_bytes).unwrap();
-            sigs.insert(index_in_group, sig);
+    // read each signature
+    let mut sigs = BTreeMap::new();
+    for share_index in 0..total_signatures {
+        let index_in_group = get_share_indexes(share_index);
+        let mut sig_bytes: [u8; 96] = [0; 96];
+        for i in 0..96 {
+            let sig_byte = get_signature_share_byte(i, share_index);
+            sig_bytes[i] = sig_byte;
         }
-        // read master commitment
-        let mut mc_bytes = Vec::new();
-        for i in 0..commitment_size {
-            let mc_byte = get_mc_byte(i);
-            mc_bytes.push(mc_byte);
-        }
-        let mc: Commitment = bincode::deserialize(&mc_bytes).unwrap();
-        // Combine signatures.
-        let pkset = PublicKeySet::from(mc);
-        let combined = pkset.combine_signatures(&sigs).unwrap();
-        // set signature bytes
-        let combined_vec = combined.to_bytes().to_vec();
-        for i in 0..combined_vec.len() {
-            SIG_BYTES[i] = combined_vec[i];
-        }
+        let sig = SignatureShare::from_bytes(sig_bytes).unwrap();
+        sigs.insert(index_in_group, sig);
+    }
+    // read master commitment
+    let mut mc_bytes = Vec::new();
+    for i in 0..commitment_size {
+        let mc_byte = get_mc_byte(i);
+        mc_bytes.push(mc_byte);
+    }
+    let mc: Commitment = bincode::deserialize(&mc_bytes).unwrap();
+    // Combine signatures.
+    let pkset = PublicKeySet::from(mc);
+    let combined = pkset.combine_signatures(&sigs).unwrap();
+    // set signature bytes
+    let combined_vec = combined.to_bytes().to_vec();
+    for i in 0..combined_vec.len() {
+        set_sig_byte(i, combined_vec[i]);
     }
 }
 

@@ -33,11 +33,11 @@ function deriveStk() {
         wasmExports.set_poly_byte(i, v);
     }
     // get threshold
-    let threshold = wasmExports.get_poly_degree();
+    let threshold = wasmExports.get_poly_degree(polyBytes.length);
     DOM.stk.m.value = threshold + 1;
     // derive master keys, ie index 0
     let mkIndex = 0;
-    wasmExports.derive_master_key();
+    wasmExports.derive_master_key(polyBytes.length);
     // show master secret key
     let mskBytes = wasmHelpers.get_msk_bytes();
     let mskHex = uint8ArrayToHex(mskBytes);
@@ -55,7 +55,7 @@ function deriveStk() {
     let skshares = "";
     let pkshares = "";
     for (let i=0; i<n; i++) {
-        wasmExports.derive_key_share(i);
+        wasmExports.derive_key_share(i, polyBytes.length);
         let skshareBytes = wasmHelpers.get_skshare();
         let skshareHex = uint8ArrayToHex(skshareBytes);
         skshares += new OrderedShare(i, skshareHex).toString() + "\n";
