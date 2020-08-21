@@ -44,6 +44,7 @@ static mut PKSHARE_BYTES: [u8; 48] = [0; 48];
 static mut BIVAR_ROW_BYTES: [u8; ROW_BYTES] = [0; ROW_BYTES];
 static mut BIVAR_COMMITMENTS_BYTES: [u8; BIVAR_COMMITMENTS_SIZE] = [0; BIVAR_COMMITMENTS_SIZE];
 static mut BIVAR_SKS_BYTES: [u8; 32 * MAX_NODES] = [0; 32 * MAX_NODES];
+static mut BIVAR_PKS_BYTES: [u8; 48 * MAX_NODES] = [0; 48 * MAX_NODES];
 // Group signing variables
 static mut SIGNATURE_SHARE_BYTES: [u8; 96 * MAX_NODES] = [0; 96 * MAX_NODES];
 static mut SHARE_INDEXES: [usize; MAX_NODES] = [0; MAX_NODES];
@@ -232,6 +233,20 @@ pub fn get_bivar_sks_byte(i: usize, node_index: usize) -> u8 {
     unsafe {
         let sks_byte_start = 32 * node_index;
         BIVAR_SKS_BYTES[sks_byte_start + i]
+    }
+}
+#[wasm_bindgen]
+pub fn set_bivar_pks_byte(i: usize, node_index: usize, v: u8) {
+    unsafe {
+        let pks_byte_start = 48 * node_index;
+        BIVAR_PKS_BYTES[pks_byte_start + i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_bivar_pks_byte(i: usize, node_index: usize) -> u8 {
+    unsafe {
+        let pks_byte_start = 48 * node_index;
+        BIVAR_PKS_BYTES[pks_byte_start + i]
     }
 }
 #[wasm_bindgen]
@@ -498,13 +513,18 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
         for i in 0..msk_vec.len() {
             POLY_BYTES[i] = msk_vec[i];
         }
-        // save the secret key shares
+        // save the secret and public key shares
         for node_index in 0..total_nodes {
             let mut sk_val = secret_key_shares[node_index];
             let sk = SecretKeyShare::from_mut(&mut sk_val);
             let sk_vec = bincode::serialize(&SerdeSecret(&sk)).unwrap();
             for i in 0..sk_vec.len() {
                 set_bivar_sks_byte(i, node_index, sk_vec[i]);
+            }
+            let pk = sk.public_key_share();
+            let pk_vec = pk.to_bytes().to_vec();
+            for i in 0..pk_vec.len() {
+                set_bivar_pks_byte(i, node_index, pk_vec[i]);
             }
         }
     }

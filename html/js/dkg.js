@@ -58,6 +58,14 @@
         }
         self.skshareHex = uint8ArrayToHex(sksBytes);
 
+        // get public key share
+        let pksBytes = [];
+        for (let i=0; i<48; i++) {
+            let pksByte = wasmExports.get_bivar_pks_byte(i, to);
+            pksBytes.push(pksByte);
+        }
+        self.pkshareHex = uint8ArrayToHex(pksBytes);
+
         // create table cell element
         self.el = document.createElement("td");
 
@@ -124,6 +132,8 @@
             }
             // set secret key share
             DOM.dkg.skshareHex.value = self.skshareHex;
+            // set public key share
+            DOM.dkg.pkshareHex.value = self.pkshareHex;
         }
 
         function deactivateAll() {
@@ -219,9 +229,11 @@
     DOM.dkg.sharesCreated = DOM.dkg.querySelectorAll(".shares-created")[0];
     DOM.dkg.sharesReceived = DOM.dkg.querySelectorAll(".shares-received")[0];
     DOM.dkg.skshareHex = DOM.dkg.querySelectorAll(".skshare-hex")[0];
+    DOM.dkg.pkshareHex = DOM.dkg.querySelectorAll(".pkshare-hex")[0];
     DOM.dkg.mpkHex = DOM.dkg.querySelectorAll(".mpk-hex")[0];
     DOM.dkg.mcHex = DOM.dkg.querySelectorAll(".mc-hex")[0];
     DOM.dkg.allSkshares = DOM.dkg.querySelectorAll(".all-skshares")[0];
+    DOM.dkg.allPkshares = DOM.dkg.querySelectorAll(".all-pkshares")[0];
     DOM.dkg.allShareCreations = DOM.dkg.querySelectorAll(".all-share-creations")[0];
     DOM.dkg.mskPolyHex = DOM.dkg.querySelectorAll(".msk-poly-hex")[0];
     DOM.dkg.error = DOM.dkg.querySelectorAll(".error")[0];
@@ -234,7 +246,9 @@
     DOM.dkg.sharesReceived.addEventListener("mouseenter", boldColumn);
     DOM.dkg.sharesReceived.addEventListener("mouseout", unboldColumn);
     DOM.dkg.skshareHex.addEventListener("mouseenter", boldColumn);
+    DOM.dkg.pkshareHex.addEventListener("mouseenter", boldColumn);
     DOM.dkg.skshareHex.addEventListener("mouseout", unboldColumn);
+    DOM.dkg.pkshareHex.addEventListener("mouseout", unboldColumn);
     DOM.dkg.mpkHex.addEventListener("mouseenter", boldAll);
     DOM.dkg.mpkHex.addEventListener("mouseout", unboldAll);
 
@@ -341,12 +355,14 @@
         DOM.dkg.mpkHex.value = "";
         DOM.dkg.mcHex.value = "";
         DOM.dkg.allSkshares.value = "";
+        DOM.dkg.allPkshares.value = "";
         DOM.dkg.allShareCreations.value = "";
         DOM.dkg.mskPolyHex.value = "";
         DOM.dkg.shareCreation.value = "";
         DOM.dkg.sharesCreated.innerHTML = "";
         DOM.dkg.sharesReceived.innerHTML = "";
         DOM.dkg.skshareHex.value = "";
+        DOM.dkg.pkshareHex.value = "";
         wasmHelpers.set_rng_values();
         // get contribution parameters
         let totalNodes = getTotalNodes();
@@ -408,6 +424,13 @@
             skshares += new OrderedShare(i, skHex).toString() + "\n";
         }
         DOM.dkg.allSkshares.value = skshares.trim();
+        // show all pkshares
+        let pkshares = "";
+        for (let i=0; i<totalNodes; i++) {
+            let pkHex = shares[i].pkshareHex;
+            pkshares += new OrderedShare(i, pkHex).toString() + "\n";
+        }
+        DOM.dkg.allPkshares.value = pkshares.trim();
         // show all bivar commitments
         let bivarCommitments = "";
         for (let i=0; i<totalNodes; i++) {

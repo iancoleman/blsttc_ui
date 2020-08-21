@@ -194,6 +194,9 @@ let tests = [
         if (DOM.dkg.allSkshares.value.length == 0) {
             throw(name + ": dkg all skshares length zero when clicking generate");
         }
+        if (DOM.dkg.allPkshares.value.length == 0) {
+            throw(name + ": dkg all pkshares length zero when clicking generate");
+        }
         if (DOM.dkg.allShareCreations.value.length == 0) {
             throw(name + ": dkg all share creations length zero when clicking generate");
         }

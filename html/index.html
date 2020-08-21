@@ -392,6 +392,13 @@
         <input class="skshare-hex" placeholder="eg 9bb286...">
 
         <p>
+            Step 4b: Public Key Share for node
+            <span class="receiver-id">0</span>.
+            This is derived from the secret key in Step 4.
+        </p>
+        <input class="pkshare-hex" placeholder="eg 209a48...">
+
+        <p>
             Step 5: The group master public key can be derived by any node by
             combining all the public portions of the BivarPolys (see Step 1
             above and Bonus #2 below). The group master public key is shown
@@ -407,7 +414,12 @@
         <textarea class="all-skshares"></textarea>
 
         <p>
-        Bonus #2: The complete list of BivarPoly public portions
+        Bonus #2: The complete list of Public Key Shares is shown below.
+        </p>
+        <textarea class="all-pkshares"></textarea>
+
+        <p>
+        Bonus #3: The complete list of BivarPoly public portions
         - ie <code>BivarPoly.commitment().row(0)</code> -
         is shown below. This list is known by all nodes, and can be combined to
         generate the group master public key.
@@ -415,7 +427,7 @@
         <textarea class="all-share-creations"></textarea>
 
         <p>
-        Bonus #3: The Master Secret Key Poly is shown below. This would
+        Bonus #4: The Master Secret Key Poly is shown below. This would
         never be seen in real life since no node has all the secrets needed
         to generate it.
         But it's handy for using elsewhere in this tool,
