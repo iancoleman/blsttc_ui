@@ -52,7 +52,7 @@
 
         // get secret key share
         let sksBytes = [];
-        for (let i=0; i<32; i++) {
+        for (let i=0; i<skLen; i++) {
             let sksByte = wasmExports.get_bivar_sks_byte(i, to);
             sksBytes.push(sksByte);
         }
@@ -60,7 +60,7 @@
 
         // get public key share
         let pksBytes = [];
-        for (let i=0; i<48; i++) {
+        for (let i=0; i<pkLen; i++) {
             let pksByte = wasmExports.get_bivar_pks_byte(i, to);
             pksBytes.push(pksByte);
         }
