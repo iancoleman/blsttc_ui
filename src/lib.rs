@@ -385,7 +385,7 @@ pub fn decrypt(ct_size: usize) -> usize {
     }
     let msg = sk.decrypt(&ct).unwrap();
     for i in 0..msg.len() {
-        set_msk_byte(i, msg[i]);
+        set_msg_byte(i, msg[i]);
     }
     return msg.len()
 }
