@@ -5,6 +5,7 @@ const pkLen = 48; // bytes
 const sigLen = 96; // bytes
 const maxMsgLen = 1049600; // bytes
 const maxCtLen = 1049600; // bytes
+const decryptionShareLen = 48; // bytes
 
 // the number of bytes in a row derived from a BivarPoly
 // which varies depending on the threshold.

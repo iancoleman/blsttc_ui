@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use wasm_bindgen::prelude::*;
-use threshold_crypto::{Ciphertext, Fr, PublicKey, PublicKeySet, SecretKey, SecretKeySet, SecretKeyShare, Signature, SignatureShare, poly::{
+use threshold_crypto::{Ciphertext, DecryptionShare, Fr, PublicKey, PublicKeySet, SecretKey, SecretKeySet, SecretKeyShare, Signature, SignatureShare, poly::{
     Poly,
     BivarPoly,
     Commitment,
@@ -9,6 +9,7 @@ use threshold_crypto::{Ciphertext, Fr, PublicKey, PublicKeySet, SecretKey, Secre
 const SK_SIZE: usize = 32;
 const PK_SIZE: usize = 48;
 const SIG_SIZE: usize = 96;
+const DECRYPTION_SHARE_SIZE: usize = 48;
 
 // DKG constants
 const MAX_NODES: usize = 10;
@@ -17,12 +18,16 @@ const MAX_COMMITMENT_SIZE: usize = 536;
 const MAX_SHARES: usize = MAX_NODES * MAX_NODES;
 const ROW_BYTES: usize = MAX_ROW_SIZE * MAX_SHARES;
 const BIVAR_COMMITMENTS_SIZE: usize = MAX_COMMITMENT_SIZE * MAX_NODES;
+// MSG can be up to 1 MiB + 1 KiB
+const MAX_MSG_SIZE: usize = 1049600;
+// CT has overhead of 152 B so is 1 MiB + 1 KiB + 152 B
+const MAX_CT_SIZE: usize = MAX_MSG_SIZE + 152;
 
 static mut SK_BYTES: [u8; SK_SIZE] = [0; SK_SIZE];
 static mut PK_BYTES: [u8; PK_SIZE] = [0; PK_SIZE];
 static mut SIG_BYTES: [u8; SIG_SIZE] = [0; SIG_SIZE];
-static mut MSG_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
-static mut CT_BYTES: [u8; 1049600] = [0; 1049600]; // 1 MiB + 1 KiB
+static mut MSG_BYTES: [u8; MAX_MSG_SIZE] = [0; MAX_MSG_SIZE];
+static mut CT_BYTES: [u8; MAX_CT_SIZE] = [0; MAX_CT_SIZE];
 // rng.next() is called 4 times during encrypt
 // rng.next() is called up to 48 times during Poly::random(10, rng)
 // rng.next() is called up to 376 times during BivarPoly::random(10, rng)
@@ -52,6 +57,7 @@ static mut BIVAR_PKS_BYTES: [u8; PK_SIZE * MAX_NODES] = [0; PK_SIZE * MAX_NODES]
 // Group signing variables
 static mut SIGNATURE_SHARE_BYTES: [u8; SIG_SIZE * MAX_NODES] = [0; SIG_SIZE * MAX_NODES];
 static mut SHARE_INDEXES: [usize; MAX_NODES] = [0; MAX_NODES];
+static mut DECRYPTION_SHARES_BYTES: [u8; DECRYPTION_SHARE_SIZE * MAX_NODES] = [0; DECRYPTION_SHARE_SIZE * MAX_NODES];
 
 #[wasm_bindgen]
 pub fn get_rng_values_size() -> usize {
@@ -285,6 +291,20 @@ pub fn get_share_indexes(i: usize) -> usize {
         SHARE_INDEXES[i]
     }
 }
+#[wasm_bindgen]
+pub fn set_decryption_shares_byte(i: usize, share_index: usize, v: u8) {
+    unsafe {
+        let ds_byte_start = DECRYPTION_SHARE_SIZE * share_index;
+        DECRYPTION_SHARES_BYTES[ds_byte_start + i] = v;
+    }
+}
+#[wasm_bindgen]
+pub fn get_decryption_shares_byte(i: usize, share_index: usize) -> u8 {
+    unsafe {
+        let ds_byte_start = DECRYPTION_SHARE_SIZE * share_index;
+        DECRYPTION_SHARES_BYTES[ds_byte_start + i]
+    }
+}
 
 #[wasm_bindgen]
 // Requires sk_bytes to be already set.
@@ -408,6 +428,16 @@ pub fn get_poly_degree(poly_size: usize) -> usize {
     }
     let poly: Poly = bincode::deserialize(&poly_bytes).unwrap();
     poly.degree()
+}
+
+#[wasm_bindgen]
+pub fn get_mc_degree(mc_size: usize) -> usize {
+    let mut mc_bytes = Vec::new();
+    for i in 0..mc_size {
+        mc_bytes.push(get_mc_byte(i));
+    }
+    let mc: Commitment = bincode::deserialize(&mc_bytes).unwrap();
+    mc.degree()
 }
 
 #[wasm_bindgen]
@@ -558,8 +588,8 @@ pub fn combine_signature_shares(total_signatures: usize, commitment_size: usize)
     let mut sigs = BTreeMap::new();
     for share_index in 0..total_signatures {
         let index_in_group = get_share_indexes(share_index);
-        let mut sig_bytes: [u8; 96] = [0; 96];
-        for i in 0..96 {
+        let mut sig_bytes: [u8; SIG_SIZE] = [0; SIG_SIZE];
+        for i in 0..SIG_SIZE {
             let sig_byte = get_signature_share_byte(i, share_index);
             sig_bytes[i] = sig_byte;
         }
@@ -581,6 +611,71 @@ pub fn combine_signature_shares(total_signatures: usize, commitment_size: usize)
     for i in 0..combined_vec.len() {
         set_sig_byte(i, combined_vec[i]);
     }
+}
+
+#[wasm_bindgen]
+// Assumes secret key share is stored in SK_BYTES
+// and ciphertext is stored in CT_BYTES
+pub fn create_decryption_share(share_index: usize, ct_size: usize) -> usize {
+    // create secret key
+    let mut sk_bytes: [u8; SK_SIZE] = [0; SK_SIZE];
+    for i in 0..SK_SIZE {
+        sk_bytes[i] = get_sk_byte(i);
+    }
+    let sk: SecretKeyShare = bincode::deserialize(&sk_bytes).unwrap();
+    // create ct vec from input parameters
+    let mut ct_vec = Vec::new();
+    for i in 0..ct_size {
+        ct_vec.push(get_ct_byte(i));
+    }
+    let ct: Ciphertext = bincode::deserialize(&ct_vec).unwrap();
+    // create decryption share
+    let decryption_share = sk.decrypt_share(&ct).unwrap();
+    // serialize decryption_share
+    let dshare_bytes = bincode::serialize(&decryption_share).unwrap();
+    // store decryption_share
+    for i in 0..dshare_bytes.len() {
+        set_decryption_shares_byte(i, share_index, dshare_bytes[i]);
+    }
+    // return decryption_share size
+    return dshare_bytes.len()
+}
+
+#[wasm_bindgen]
+pub fn combine_decryption_shares(total_decryption_shares: usize, commitment_size: usize, ct_size: usize) -> usize {
+    // read each decryption share
+    let mut dshares = BTreeMap::new();
+    for share_index in 0..total_decryption_shares {
+        let index_in_group = get_share_indexes(share_index);
+        let mut dshare_bytes = Vec::new();
+        for i in 0..DECRYPTION_SHARE_SIZE {
+            let dshare_byte = get_decryption_shares_byte(i, share_index);
+            dshare_bytes.push(dshare_byte);
+        }
+        let dshare: DecryptionShare = bincode::deserialize(&dshare_bytes).unwrap();
+        dshares.insert(index_in_group, dshare);
+    }
+    // read master commitment
+    let mut mc_bytes = Vec::new();
+    for i in 0..commitment_size {
+        let mc_byte = get_mc_byte(i);
+        mc_bytes.push(mc_byte);
+    }
+    let mc: Commitment = bincode::deserialize(&mc_bytes).unwrap();
+    // create ct vec from input parameters
+    let mut ct_vec = Vec::new();
+    for i in 0..ct_size {
+        ct_vec.push(get_ct_byte(i));
+    }
+    let ct: Ciphertext = bincode::deserialize(&ct_vec).unwrap();
+    // Combine decryption shares.
+    let pkset = PublicKeySet::from(mc);
+    let msg = pkset.decrypt(&dshares, &ct).unwrap();
+    // set message bytes
+    for i in 0..msg.len() {
+        set_msg_byte(i, msg[i]);
+    }
+    return msg.len()
 }
 
 // https://rust-random.github.io/rand/rand/trait.RngCore.html

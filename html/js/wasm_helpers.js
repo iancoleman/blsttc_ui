@@ -200,6 +200,14 @@ this.get_mc_bytes = function(threshold) {
     return mcBytes;
 }
 
+this.set_mc_bytes = function(mcBytes) {
+    // set master commitment in wasm
+    for (let i=0; i<mcBytes.length; i++) {
+        let v = mcBytes[i];
+        wasmExports.set_mc_byte(i, v);
+    }
+}
+
 this.get_skshare = function() {
     let skshareBytes = [];
     for (let i=0; i<skLen; i++) {
@@ -220,10 +228,7 @@ this.get_pkshare = function() {
 
 this.combine_signatures = function(mcBytes, sigshares) {
     // set master commitment in wasm
-    for (let i=0; i<mcBytes.length; i++) {
-        let v = mcBytes[i];
-        wasmExports.set_mc_byte(i, v);
-    }
+    wasmHelpers.set_mc_bytes(mcBytes);
     // set the signature shares
     for (let shareIndex=0; shareIndex<sigshares.length; shareIndex++) {
         let share = sigshares[shareIndex];
@@ -250,6 +255,49 @@ this.combine_signatures = function(mcBytes, sigshares) {
         sigBytes.push(sigByte);
     }
     return sigBytes;
+}
+
+// s is secret key share bytes
+// ct is ciphertext bytes
+// uiShareIndex is the index of the share as it appears in the UI
+// derivedShareIndex is the index of the share when derived from the poly
+this.create_decryption_share = function(s, uiShareIndex, derivedShareIndex, ct) {
+    // set ct bytes
+    for (let i=0; i<ct.length; i++) {
+        wasmExports.set_ct_byte(i, ct[i]);
+    }
+    // set secret key share
+    for (let i=0; i<s.length; i++) {
+        wasmExports.set_sk_byte(i, s[i]);
+    }
+    // create decryption share
+    let dshareSize = wasmExports.create_decryption_share(uiShareIndex, ct.length);
+    // set derivedShareIndex
+    wasmExports.set_share_indexes(uiShareIndex, derivedShareIndex);
+    // read decryption share
+    let dshareBytes = [];
+    for (let i=0; i<decryptionShareLen; i++) {
+        let dshareByte = wasmExports.get_decryption_shares_byte(i, uiShareIndex);
+        dshareBytes.push(dshareByte);
+    }
+    return dshareBytes;
+}
+
+// Assumes master commitment is already set.
+// Assumes create_decryption_share is already called for all shares,
+// Which means ciphertext is already set
+// and decryption shares are already set
+// and share_indexes is already set
+this.combine_decryption_shares = function(totalShares, mcSize, ctSize) {
+    // combine decryption shares
+    let msgSize = wasmExports.combine_decryption_shares(totalShares, mcSize, ctSize);
+    // read msg
+    let msgBytes = [];
+    for (let i=0; i<msgSize; i++) {
+        let msgByte = wasmExports.get_msg_byte(i);
+        msgBytes.push(msgByte);
+    }
+    return msgBytes;
 }
 
 })();

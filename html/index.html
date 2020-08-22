@@ -455,11 +455,11 @@
         <textarea class="skshares"></textarea>
 
         <p>
-        Input: Master Commitment. This can be found under the Master Public Key
-        in
+        Input: Master Commitment. This can be found in
         <a href="#simple-threshold-keys">Simple Threshold Keys</a>
         or
-        <a href="#dkg">DKG</a>.
+        <a href="#dkg">DKG</a>
+        and should be known by all nodes in the group.
         </p>
         <input class="mc-hex" placeholder="eg 800bfc9...">
 
@@ -535,7 +535,47 @@
 
         <h2>Decrypt Group Message</h2>
 
-        <p>Work is in progress...</p>
+        <p>
+        Input: Secret Key Shares. There must be at least m secret keys
+        of an m-of-n group to be able to sign the message.
+        The keys do not need to be sequential or in any particular order.
+        The format of each line should match those generated in
+        Simple Threshold Keys or DKG, ie
+        <code>shareIndex:hexEncodedSecretKey</code>.
+        </p>
+        <textarea class="skshares"></textarea>
+
+        <p>
+        Input: Master Commitment. This can be found in
+        <a href="#simple-threshold-keys">Simple Threshold Keys</a>
+        or
+        <a href="#dkg">DKG</a>
+        and should be known by all nodes in the group.
+        </p>
+        <input class="mc-hex" placeholder="eg 800bfc9...">
+
+        <p>
+        Input: Ciphertext. This is text encrypted using the group Master
+        Public Key. Encryption can be done in the
+        <a href="#encrypt">encrypt</a>
+        section.
+        </p>
+        <input class="ct">
+
+        <p>
+        Output: Decryption Shares. These are combined into the decrypted
+        message shown below.
+        </p>
+        <textarea class="msg-shares"></textarea>
+
+        <p>
+        Output: Message. This is created by combining the
+        decryption shares above into the message.
+        This can only be done when
+        m-of-n members of the group have provided their decryption share.
+        If less than m shares are combined the message will be invalid.
+        </p>
+        <input class="msg">
 
     </div>
 
@@ -603,6 +643,7 @@
     <script src="js/simple_threshold_keys.js"></script>
     <script src="js/dkg.js"></script>
     <script src="js/sign_group_message.js"></script>
+    <script src="js/group_decryption.js"></script>
 
 </body>
 </html>

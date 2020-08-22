@@ -247,28 +247,66 @@ let tests = [
                 }
                 next();
             });
-        })
-    }
+        });
+    },
+
+    function() {
+        let name = "Group encrypted message can be decrypted";
+        // m is 4
+        let skshares = [
+            testData[2].sks[0],
+            testData[2].sks[1],
+            testData[2].sks[2],
+            testData[2].sks[3],
+        ];
+        DOM.gd.skshares.value = skshares.join("\n");
+        DOM.gd.mcHex.value = testData[2].mc;
+        DOM.gd.ct.value = testData[2].ct;
+        DOM.gd.ct.dispatchEvent(inputEvt);
+        // check decryption shares are shown
+        waitForChange(DOM.gd.msgshares, function() {
+            let msgshares = DOM.gd.msgshares.value.split("\n");
+            if (msgshares.length != skshares.length) {
+                throw(name + ": incorret number of decryption shares");
+            }
+            for (let i=0; i<msgshares.length; i++) {
+                if (msgshares[i] != testData[2].decryption_shares[i]) {
+                    throw(name + ": incorrect decryption share " + i);
+                }
+            }
+            // check group plaintext is shown
+            let msg = DOM.gd.msg.value;
+            if (msg != testData[2].msg) {
+                throw(name + ": incorrect plaintext");
+            }
+            next();
+        });
+    },
 
     // TODO less urgent tests:
     // STK Changing threshold changes poly
     // STK Changing total-keys shows correct number of keys
-    // STK Cannot set n to be less than m
-    // STK Cannot set m to be more than n
-    // STK m cannot be less than 2
-    // STK m cannot be more than 10
-    // STK n cannot be less than 2
-    // STK n cannot be more than 10
-    // STK master secret key can be used in ui derive public key from secret key
+    // STK and DKG Cannot set n to be less than m
+    // STK and DKG Cannot set m to be more than n
+    // STK and DKG m cannot be less than 2
+    // STK and DKG m cannot be more than 10
+    // STK and DKG n cannot be less than 2
+    // STK and DKG n cannot be more than 10
+    // STK and DKG master secret key can be used in ui derive public key from secret key
     // STK m is shown correctly for user defined poly
     // STK check master commitment value is correct
     // DKG secret key shares can be used to derive public key shares
     // DKG master secret key poly can be used to derive secret key share set
-    // SGM Choice of m shares can be arbitrary
-    // SGM Order of shares can be arbitrary
-    // SGM Signature is same for any combo of m shares
-    // SGM Can enter more than m shares
-    // SGM Less than m shares shows error
+    // DKG changing number of nodes shows correct number of nodes
+    // SGM and GD Choice of m shares can be arbitrary
+    // SGM and GD Order of shares can be arbitrary
+    // SGM and GD Signature/message is same for any combo of m shares
+    // SGM and GD Can enter more than m shares
+    // SGM and GD Less than m shares shows error
+    // SGM and GD Using share not derived from poly does not verify/decrypt
+    // SGM and GD Master Commitment not derived from poly does not verify/decrypt
+    // SGM and GD Incorrect share index does not verify/decrypt
+    // GD Incorrect ciphertext shows error
 
 ];
 
@@ -326,6 +364,16 @@ let testData = [
             "6:9695042df154e73274f2e754aab6a99f78023a4bbdde51ad949244bee72530ccd5c4aa9194bbb469ff4bdfd20197e56913bf4a7c644d9cae34009deee5e6336970b0482750ccb9f1db3ad19330a34a0dc93442d37cbca9ca5cccc7a09482e301",
         ],
         "sig": "b166a36dcd7a6b7a9b6b47faed22dec916dc9a105090cdd66c5740df1695ccedb26afdc6ac07467fcecb44a8da57d52400c9efeb4b0dbc01a252c09df4b49dc700a0a8085282abda489353ce64e45d48c1508f431499f56a66d673805e8f7f6b",
+        "ct": "b7710133e37845b4c8037700a7b6ed8821a3e1a13b44126cde3492ae72ff14af080e74e6f52d413bd8c78588cffae1df0c000000000000008b04c5cca27c5d915e96073ba2fe08f0e5da38160d249ff879deb7f07e1de226fc734b6c87c407e1f6162edfcb7d168ea2de71e4ffeef5e5b79643fb0cd0856fe7cdb4fd512379527b1e5929460474d9f57acac2ac46aab0690620373bb014b816d959c26d7b77d4bec4dfd3",
+        "decryption_shares": [
+            "0:a6bb1e47100241900621a2dbb4e7beedfe0ce64719d49e1b4ab72e588a18b5eeed20ef17997df502e4d1201e8b00e541",
+            "1:b99f13a73f968d189adc1ab67653c13e4b9499b8f6e1923be30d50826a9a578aa508d2b2ca02af227f9e5d45c6c14df4",
+            "2:8ce93d76eb295ca8abb6c2bda84766d2a6472ec746ce2bf800d5a77c64736503c3c8decb3bf436b2fdace652a7d01772",
+            "3:aa8f9e80f66d8aed1d686b64b1369b80d0cf8c8c5b614983658934a36a39b91c7756de56f273ea0e8bf438421e443cef",
+            "4:850905cfbd7aa80c30a1b5dcf794bafc0b5dcbf3edb48700d45b374aee7420dc3ba14bea1e3f7d3415431b65a50a1ef3",
+            "5:98e1002b548aafcc37f8dd6192864b29fa047695ee8dae5446195029b28c36c55ce654521d98d88fd7b72b59cfc6587f",
+            "6:a859928516ccfcc85668358e27d16e22fc3258e99abd35d21f95fa2ef8c3de49917c19c4a9f49e461f5b0f2c4a99821d",
+        ],
     },
 ];
 
