@@ -29,3 +29,29 @@ function base64ToUint8Array(b) {
             return c.charCodeAt(0);
     }));
 }
+
+function uint8ArrayToBase32z(a) {
+    for (let i=0; i<a.length; i++) {
+        wasmExports.set_unbase32z_byte(i, a[i]);
+    }
+    let b32zSize = wasmExports.base32z_encode(a.length);
+    let b32zBytes = [];
+    for (let i=0; i<b32zSize; i++) {
+        let b = wasmExports.get_base32z_byte(i);
+        b32zBytes.push(b);
+    }
+    return b32zBytes;
+}
+
+function base32zToUin8array(b) {
+    for (let i=0; i<b.length; i++) {
+        wasmExports.set_base32z_byte(i, b[i]);
+    }
+    let unb32zSize = wasmExports.base32z_decode(b.length);
+    let unb32zBytes = [];
+    for (let i=0; i<unb32zSize; i++) {
+        let b = wasmExports.get_unbase32z_byte(i);
+        unb32zBytes.push(b);
+    }
+    return unb32zBytes;
+}
