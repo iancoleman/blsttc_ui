@@ -1,11 +1,11 @@
 (function() {
 
-DOM.gd = document.querySelectorAll("#thresh-decryption")[0];
-DOM.gd.skshares = DOM.gd.querySelectorAll(".skshares")[0];
-DOM.gd.mcHex = DOM.gd.querySelectorAll(".mc-hex")[0];
-DOM.gd.ct = DOM.gd.querySelectorAll(".ct")[0];
-DOM.gd.msgshares = DOM.gd.querySelectorAll(".msg-shares")[0];
-DOM.gd.msg = DOM.gd.querySelectorAll(".msg")[0];
+DOM.gd = {};
+DOM.gd.skshares = document.querySelectorAll("#thresh-decryption .skshares")[0];
+DOM.gd.mcHex = document.querySelectorAll("#thresh-decryption .mc-hex")[0];
+DOM.gd.ct = document.querySelectorAll("#thresh-decryption .ct")[0];
+DOM.gd.msgshares = document.querySelectorAll("#thresh-decryption .msg-shares")[0];
+DOM.gd.msg = document.querySelectorAll("#thresh-decryption .msg")[0];
 
 DOM.gd.skshares.addEventListener("input", tryToDecrypt);
 DOM.gd.mcHex.addEventListener("input", tryToDecrypt);

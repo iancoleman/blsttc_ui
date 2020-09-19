@@ -218,25 +218,25 @@
         return el;
     }
 
-    DOM.dkg = document.querySelectorAll("#dkg-keys")[0];
-    DOM.dkg.generate = DOM.dkg.querySelectorAll(".generate")[0];
-    DOM.dkg.totalNodes = DOM.dkg.querySelectorAll(".total-nodes")[0];
-    DOM.dkg.m = DOM.dkg.querySelectorAll(".m")[0];
-    DOM.dkg.shares = DOM.dkg.querySelectorAll(".shares tbody")[0];
-    DOM.dkg.senderId = DOM.dkg.querySelectorAll(".sender-id");
-    DOM.dkg.receiverId = DOM.dkg.querySelectorAll(".receiver-id");
-    DOM.dkg.shareCreation = DOM.dkg.querySelectorAll(".share-creation")[0];
-    DOM.dkg.sharesCreated = DOM.dkg.querySelectorAll(".shares-created")[0];
-    DOM.dkg.sharesReceived = DOM.dkg.querySelectorAll(".shares-received")[0];
-    DOM.dkg.skshareHex = DOM.dkg.querySelectorAll(".skshare-hex")[0];
-    DOM.dkg.pkshareHex = DOM.dkg.querySelectorAll(".pkshare-hex")[0];
-    DOM.dkg.mpkHex = DOM.dkg.querySelectorAll(".mpk-hex")[0];
-    DOM.dkg.mcHex = DOM.dkg.querySelectorAll(".mc-hex")[0];
-    DOM.dkg.allSkshares = DOM.dkg.querySelectorAll(".all-skshares")[0];
-    DOM.dkg.allPkshares = DOM.dkg.querySelectorAll(".all-pkshares")[0];
-    DOM.dkg.allShareCreations = DOM.dkg.querySelectorAll(".all-share-creations")[0];
-    DOM.dkg.mskPolyHex = DOM.dkg.querySelectorAll(".msk-poly-hex")[0];
-    DOM.dkg.error = DOM.dkg.querySelectorAll(".error")[0];
+    DOM.dkg = {};
+    DOM.dkg.generate = document.querySelectorAll("#dkg-keys .generate")[0];
+    DOM.dkg.totalNodes = document.querySelectorAll("#dkg-keys .total-nodes")[0];
+    DOM.dkg.m = document.querySelectorAll("#dkg-keys .m")[0];
+    DOM.dkg.shares = document.querySelectorAll("#dkg-keys .shares tbody")[0];
+    DOM.dkg.senderId = document.querySelectorAll("#dkg-keys .sender-id");
+    DOM.dkg.receiverId = document.querySelectorAll("#dkg-keys .receiver-id");
+    DOM.dkg.shareCreation = document.querySelectorAll("#dkg-keys .share-creation")[0];
+    DOM.dkg.sharesCreated = document.querySelectorAll("#dkg-keys .shares-created")[0];
+    DOM.dkg.sharesReceived = document.querySelectorAll("#dkg-keys .shares-received")[0];
+    DOM.dkg.skshareHex = document.querySelectorAll("#dkg-keys .skshare-hex")[0];
+    DOM.dkg.pkshareHex = document.querySelectorAll("#dkg-keys .pkshare-hex")[0];
+    DOM.dkg.mpkHex = document.querySelectorAll("#dkg-keys .mpk-hex")[0];
+    DOM.dkg.mcHex = document.querySelectorAll("#dkg-keys .mc-hex")[0];
+    DOM.dkg.allSkshares = document.querySelectorAll("#dkg-keys .all-skshares")[0];
+    DOM.dkg.allPkshares = document.querySelectorAll("#dkg-keys .all-pkshares")[0];
+    DOM.dkg.allShareCreations = document.querySelectorAll("#dkg-keys .all-share-creations")[0];
+    DOM.dkg.mskPolyHex = document.querySelectorAll("#dkg-keys .msk-poly-hex")[0];
+    DOM.dkg.error = document.querySelectorAll("#dkg-keys .error")[0];
 
     DOM.dkg.generate.addEventListener("click", generateRandomContributions);
     DOM.dkg.shareCreation.addEventListener("mouseenter", boldRow);

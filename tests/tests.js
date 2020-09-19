@@ -283,9 +283,49 @@ let tests = [
         });
     },
 
+    function() {
+        let name = "Simple Threshold Keys sets m when poly is set";
+        // set poly where m is 4
+        let d = testData[2];
+        DOM.stk.polyHex.value = d.poly;
+        DOM.stk.polyHex.dispatchEvent(inputEvt);
+        // check m is shown as 4
+        let m = DOM.stk.m.value;
+        if (m != 4) {
+            throw(name + ": m is not 4");
+        }
+        // change to poly where m is 3
+        d = testData[3];
+        DOM.stk.polyHex.value = d.poly;
+        DOM.stk.polyHex.dispatchEvent(inputEvt);
+        // check m is shown as 3
+        m = DOM.stk.m.value;
+        if (m != 3) {
+            throw(name + ": m did not change to 3");
+        }
+        next();
+    },
+
+    function() {
+        let name = "Simple Threshold Keys can vary the total keys shown";
+        let keysToShow = 20;
+        // set poly to derive keys from
+        let d = testData[2];
+        DOM.stk.polyHex.value = d.poly;
+        // set number of keys to show
+        DOM.stk.totalKeys.value = keysToShow;
+        DOM.stk.totalKeys.dispatchEvent(inputEvt);
+        // check correct number of keys are shown
+        waitForChange(DOM.stk.skset, function() {
+            let sks = DOM.stk.skset.value.split("\n");
+            if (sks.length != keysToShow) {
+                throw(name + ": incorrect number of keys shown");
+            }
+            next();
+        });
+    },
+
     // TODO less urgent tests:
-    // STK Changing threshold changes poly
-    // STK Changing total-keys shows correct number of keys
     // STK and DKG Cannot set n to be less than m
     // STK and DKG Cannot set m to be more than n
     // STK and DKG m cannot be less than 2
@@ -293,7 +333,6 @@ let tests = [
     // STK and DKG n cannot be less than 2
     // STK and DKG n cannot be more than 10
     // STK and DKG master secret key can be used in ui derive public key from secret key
-    // STK m is shown correctly for user defined poly
     // STK check master commitment value is correct
     // DKG secret key shares can be used to derive public key shares
     // DKG master secret key poly can be used to derive secret key share set
@@ -375,6 +414,9 @@ let testData = [
             "6:a859928516ccfcc85668358e27d16e22fc3258e99abd35d21f95fa2ef8c3de49917c19c4a9f49e461f5b0f2c4a99821d",
         ],
     },
+    { // testData[3]
+        "poly": "030000000000000062376fe564a4ab2a828010c83ce3edeaecac5928fa9d4ca1ac8b2dae7ddf3a4dbd345bdc85ee04e9786b6ead9670a8caaeab4170c637322d1ea1626acb2a0843b6f70b7753eb6745bec73e268cfc8b93b508f84d6d40cafb76d239fb09797c6e",
+    },
 ];
 
 let initialValue = null;
@@ -403,6 +445,31 @@ function shuffle(a) {
     return a;
 }
 
+function resetUi() {
+    for (root in DOM) {
+        for (elName in DOM[root]) {
+            let el = DOM[root][elName];
+            if ("value" in el) {
+                let key = root + elName;
+                DOM[root][elName].value = initialElValues[key];
+            }
+        }
+    }
+}
+
+let initialElValues = {};
+function setInitialElValues() {
+    for (root in DOM) {
+        for (elName in DOM[root]) {
+            let el = DOM[root][elName];
+            if ("value" in el) {
+                let key = root + elName;
+                initialElValues[key] = DOM[root][elName].value;
+            }
+        }
+    }
+}
+
 let testIndex = -1;
 function next() {
     testIndex += 1;
@@ -411,9 +478,11 @@ function next() {
         return;
     }
     console.log("Running test " + (testIndex + 1) + " of " + tests.length);
+    resetUi();
     tests[testIndex]();
 }
 
+setInitialElValues();
 tests = shuffle(tests);
 next();
 

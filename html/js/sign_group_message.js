@@ -1,11 +1,11 @@
 (function() {
 
-DOM.sgm = document.querySelectorAll("#thresh-sig")[0];
-DOM.sgm.skshares = DOM.sgm.querySelectorAll(".skshares")[0];
-DOM.sgm.mcHex = DOM.sgm.querySelectorAll(".mc-hex")[0];
-DOM.sgm.msg = DOM.sgm.querySelectorAll(".msg")[0];
-DOM.sgm.sigshares = DOM.sgm.querySelectorAll(".sig-shares")[0];
-DOM.sgm.sig = DOM.sgm.querySelectorAll(".sig")[0];
+DOM.sgm = {};
+DOM.sgm.skshares = document.querySelectorAll("#thresh-sig .skshares")[0];
+DOM.sgm.mcHex = document.querySelectorAll("#thresh-sig .mc-hex")[0];
+DOM.sgm.msg = document.querySelectorAll("#thresh-sig .msg")[0];
+DOM.sgm.sigshares = document.querySelectorAll("#thresh-sig .sig-shares")[0];
+DOM.sgm.sig = document.querySelectorAll("#thresh-sig .sig")[0];
 
 DOM.sgm.skshares.addEventListener("input", tryToSign);
 DOM.sgm.mcHex.addEventListener("input", tryToSign);
