@@ -6,7 +6,6 @@ use threshold_crypto::{Ciphertext, DecryptionShare, Fr, PublicKey, PublicKeySet,
     Commitment,
 }, serde_impl::SerdeSecret, ff::Field};
 use std::str;
-use multibase::{decode, encode, Base};
 
 const SK_SIZE: usize = 32;
 const PK_SIZE: usize = 48;
@@ -60,13 +59,6 @@ static mut BIVAR_PKS_BYTES: [u8; PK_SIZE * MAX_NODES] = [0; PK_SIZE * MAX_NODES]
 static mut SIGNATURE_SHARE_BYTES: [u8; SIG_SIZE * MAX_NODES] = [0; SIG_SIZE * MAX_NODES];
 static mut SHARE_INDEXES: [usize; MAX_NODES] = [0; MAX_NODES];
 static mut DECRYPTION_SHARES_BYTES: [u8; DECRYPTION_SHARE_SIZE * MAX_NODES] = [0; DECRYPTION_SHARE_SIZE * MAX_NODES];
-
-// base32z bytes
-// base32 is 160% more bytes than unbase32
-// so is (1 MiB + 1 KiB) * 1.6 = 1679360
-const MAX_BASE32Z_SIZE: usize = 1679360;
-static mut BASE32Z_BYTES: [u8; MAX_BASE32Z_SIZE] = [0; MAX_BASE32Z_SIZE];
-static mut UNBASE32Z_BYTES: [u8; MAX_MSG_SIZE] = [0; MAX_MSG_SIZE];
 
 #[wasm_bindgen]
 pub fn get_rng_values_size() -> usize {
@@ -312,30 +304,6 @@ pub fn get_decryption_shares_byte(i: usize, share_index: usize) -> u8 {
     unsafe {
         let ds_byte_start = DECRYPTION_SHARE_SIZE * share_index;
         DECRYPTION_SHARES_BYTES[ds_byte_start + i]
-    }
-}
-#[wasm_bindgen]
-pub fn set_base32z_byte(i: usize, v: u8) {
-    unsafe {
-        BASE32Z_BYTES[i] = v;
-    }
-}
-#[wasm_bindgen]
-pub fn get_base32z_byte(i: usize) -> u8 {
-    unsafe {
-        BASE32Z_BYTES[i]
-    }
-}
-#[wasm_bindgen]
-pub fn set_unbase32z_byte(i: usize, v: u8) {
-    unsafe {
-        UNBASE32Z_BYTES[i] = v;
-    }
-}
-#[wasm_bindgen]
-pub fn get_unbase32z_byte(i: usize) -> u8 {
-    unsafe {
-        UNBASE32Z_BYTES[i]
     }
 }
 
@@ -709,37 +677,6 @@ pub fn combine_decryption_shares(total_decryption_shares: usize, commitment_size
         set_msg_byte(i, msg[i]);
     }
     return msg.len()
-}
-
-#[wasm_bindgen]
-// Assumes UNBASE32Z_BYTES is set
-pub fn base32z_encode(unbase32z_size: usize) -> usize {
-    let mut unbase32z = Vec::new();
-    for i in 0..unbase32z_size {
-        let byte = get_unbase32z_byte(i);
-        unbase32z.push(byte);
-    }
-    let base32z_bytes = encode(Base::Base32z, unbase32z).into_bytes();
-    for i in 0..base32z_bytes.len() {
-        set_base32z_byte(i, base32z_bytes[i]);
-    }
-    return base32z_bytes.len()
-}
-
-#[wasm_bindgen]
-// Assumes BASE32Z_BYTES is set
-pub fn base32z_decode(base32z_size: usize) -> usize {
-    let mut base32z = Vec::new();
-    for i in 0..base32z_size {
-        let byte = get_base32z_byte(i);
-        base32z.push(byte);
-    }
-    let base32zs = str::from_utf8(&base32z).unwrap();
-    let (_, unbase32z_bytes) = decode(base32zs).unwrap();
-    for i in 0..unbase32z_bytes.len() {
-        set_unbase32z_byte(i, unbase32z_bytes[i]);
-    }
-    return unbase32z_bytes.len()
 }
 
 // https://rust-random.github.io/rand/rand/trait.RngCore.html

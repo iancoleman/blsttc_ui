@@ -14,7 +14,6 @@ threshold_crypto = { version = "0.4.0" }
 bincode = "1.2.1"
 serde = { version = "1.0.104", features = ["derive"] }
 rand_core = "0.5.1"
-multibase = "~0.6.0"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
