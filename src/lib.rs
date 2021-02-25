@@ -311,25 +311,46 @@ pub fn get_decryption_shares_byte(i: usize, share_index: usize) -> u8 {
 // Requires sk_bytes to be already set.
 // Puts pk result into pk_bytes.
 pub fn derive_pk_from_sk() {
-    let mut sk_bytes: [u8; SK_SIZE] = [0; SK_SIZE];
+    let mut sk_bytes: Vec<u8> = vec![0_u8; SK_SIZE];
     for i in 0..SK_SIZE {
         sk_bytes[i] = get_sk_byte(i);
     }
-    let sk: SecretKey = bincode::deserialize(&sk_bytes).unwrap();
+    let bincode_sk_bytes = big_endian_bytes_to_bincode_bytes(sk_bytes);
+    let sk: SecretKey = bincode::deserialize(&bincode_sk_bytes).unwrap();
     let pk_vec = sk.public_key().to_bytes().to_vec();
     for i in 0..pk_vec.len() {
         set_pk_byte(i, pk_vec[i]);
     }
 }
 
+// bincode is little endian encoding, see
+// https://docs.rs/bincode/1.3.2/bincode/config/trait.Options.html#options
+// but SecretKey.reveal() gives big endian hex
+// and all other bls implementations specify bigendian.
+// Also see
+// https://safenetforum.org/t/simple-web-based-tool-for-bls-keys/32339/37
+// so to deserialize a big endian bytes using bincode
+// we must convert to little endian bytes
+fn big_endian_bytes_to_bincode_bytes(beb: Vec<u8>) -> Vec<u8> {
+    let mut bb = beb.clone();
+    bb.reverse();
+    bb
+}
+fn bincode_bytes_to_big_endian_bytes(bb: Vec<u8>) -> Vec<u8> {
+    let mut beb = bb.clone();
+    beb.reverse();
+    beb
+}
+
 #[wasm_bindgen]
 pub fn sign_msg(msg_size: usize) {
     // create secret key vec from input parameters
-    let mut sk_bytes: [u8; SK_SIZE] = [0; SK_SIZE];
+    let mut sk_bytes: Vec<u8> = vec![0_u8; SK_SIZE];
     for i in 0..SK_SIZE {
         sk_bytes[i] = get_sk_byte(i);
     }
-    let sk: SecretKey = bincode::deserialize(&sk_bytes).unwrap();
+    let bincode_sk_bytes = big_endian_bytes_to_bincode_bytes(sk_bytes);
+    let sk: SecretKey = bincode::deserialize(&bincode_sk_bytes).unwrap();
     // create msg vec from input parameters
     let mut msg = Vec::new();
     for i in 0..msg_size {
@@ -380,7 +401,8 @@ pub fn encrypt(msg_size: usize) -> usize {
     }
     let mut rng = ExternalRng(0);
     let ct = pk.encrypt_with_rng(&mut rng, msg);
-    let ct_vec = bincode::serialize(&ct).unwrap();
+    let bincode_ct_vec = bincode::serialize(&ct).unwrap();
+    let ct_vec = bincode_bytes_to_big_endian_bytes(bincode_ct_vec);
     for i in 0..ct_vec.len() {
         set_ct_byte(i, ct_vec[i]);
     }
@@ -390,17 +412,19 @@ pub fn encrypt(msg_size: usize) -> usize {
 #[wasm_bindgen]
 pub fn decrypt(ct_size: usize) -> usize {
     // create secret key vec from input parameters
-    let mut sk_bytes: [u8; SK_SIZE] = [0; SK_SIZE];
+    let mut sk_bytes: Vec<u8> = vec![0_u8; SK_SIZE];
     for i in 0..SK_SIZE {
         sk_bytes[i] = get_sk_byte(i);
     }
-    let sk: SecretKey = bincode::deserialize(&sk_bytes).unwrap();
+    let bincode_sk_bytes = big_endian_bytes_to_bincode_bytes(sk_bytes);
+    let sk: SecretKey = bincode::deserialize(&bincode_sk_bytes).unwrap();
     // create ct vec from input parameters
     let mut ct_vec = Vec::new();
     for i in 0..ct_size {
         ct_vec.push(get_ct_byte(i));
     }
-    let ct: Ciphertext = bincode::deserialize(&ct_vec).unwrap();
+    let bincode_ct_vec = big_endian_bytes_to_bincode_bytes(ct_vec);
+    let ct: Ciphertext = bincode::deserialize(&bincode_ct_vec).unwrap();
     if !ct.verify() {
         return 0;
     }
@@ -415,7 +439,8 @@ pub fn decrypt(ct_size: usize) -> usize {
 pub fn generate_poly(threshold: usize) {
     let mut rng = ExternalRng(0);
     let poly = Poly::random(threshold, &mut rng);
-    let poly_vec = bincode::serialize(&poly).unwrap();
+    let bincode_poly_vec = bincode::serialize(&poly).unwrap();
+    let poly_vec = bincode_bytes_to_big_endian_bytes(bincode_poly_vec);
     for i in 0..poly_vec.len() {
         set_poly_byte(i, poly_vec[i]);
     }
@@ -427,7 +452,8 @@ pub fn get_poly_degree(poly_size: usize) -> usize {
     for i in 0..poly_size {
         poly_bytes.push(get_poly_byte(i));
     }
-    let poly: Poly = bincode::deserialize(&poly_bytes).unwrap();
+    let bincode_poly_bytes = big_endian_bytes_to_bincode_bytes(poly_bytes);
+    let poly: Poly = bincode::deserialize(&bincode_poly_bytes).unwrap();
     poly.degree()
 }
 
@@ -437,7 +463,8 @@ pub fn get_mc_degree(mc_size: usize) -> usize {
     for i in 0..mc_size {
         mc_bytes.push(get_mc_byte(i));
     }
-    let mc: Commitment = bincode::deserialize(&mc_bytes).unwrap();
+    let bincode_mc_bytes = big_endian_bytes_to_bincode_bytes(mc_bytes);
+    let mc: Commitment = bincode::deserialize(&bincode_mc_bytes).unwrap();
     mc.degree()
 }
 
@@ -447,12 +474,14 @@ pub fn derive_master_key(poly_size: usize) {
     for i in 0..poly_size {
         poly_bytes.push(get_poly_byte(i));
     }
-    let poly: Poly = bincode::deserialize(&poly_bytes).unwrap();
+    let bincode_poly_bytes = big_endian_bytes_to_bincode_bytes(poly_bytes);
+    let poly: Poly = bincode::deserialize(&bincode_poly_bytes).unwrap();
     let commitment = poly.commitment();
     // see https://github.com/poanetwork/threshold_crypto/blob/7709462f2df487ada3bb3243060504b5881f2628/src/lib.rs#L685
     let mut fr = poly.evaluate(0);
     let msk = SecretKey::from_mut(&mut fr);
-    let msk_vec = bincode::serialize(&SerdeSecret(&msk)).unwrap();
+    let bincode_msk_vec = bincode::serialize(&SerdeSecret(&msk)).unwrap();
+    let msk_vec = bincode_bytes_to_big_endian_bytes(bincode_msk_vec);
     for i in 0..msk_vec.len() {
         set_msk_byte(i, msk_vec[i]);
     }
@@ -466,7 +495,8 @@ pub fn derive_master_key(poly_size: usize) {
         set_mpk_byte(i, mpk_vec[i]);
     }
     // master commitment
-    let commitment_vec = bincode::serialize(&commitment).unwrap();
+    let bincode_commitment_vec = bincode::serialize(&commitment).unwrap();
+    let commitment_vec = bincode_bytes_to_big_endian_bytes(bincode_commitment_vec);
     for i in 0..commitment_vec.len() {
         set_mc_byte(i, commitment_vec[i]);
     }
@@ -478,11 +508,13 @@ pub fn derive_key_share(i: usize, poly_size: usize) {
     for i in 0..poly_size {
         poly_bytes.push(get_poly_byte(i));
     }
-    let poly: Poly = bincode::deserialize(&poly_bytes).unwrap();
+    let bincode_poly_bytes = big_endian_bytes_to_bincode_bytes(poly_bytes);
+    let poly: Poly = bincode::deserialize(&bincode_poly_bytes).unwrap();
     // secret key
     let skset: SecretKeySet = SecretKeySet::from(poly);
     let skshare = skset.secret_key_share(i);
-    let skshare_vec = bincode::serialize(&SerdeSecret(&skshare)).unwrap();
+    let bincode_skshare_vec = bincode::serialize(&SerdeSecret(&skshare)).unwrap();
+    let skshare_vec = bincode_bytes_to_big_endian_bytes(bincode_skshare_vec);
     for i in 0..skshare_vec.len() {
         set_skshare_byte(i, skshare_vec[i]);
     }
@@ -529,7 +561,8 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
         // commitment.row(0) is used in calculation of the master
         // public key so we'll only store the commitment.row(0).
         let commitment = bivar.commitment();
-        let commitment_vec = bincode::serialize(&commitment).unwrap();
+        let bincode_commitment_vec = bincode::serialize(&commitment).unwrap();
+        let commitment_vec = bincode_bytes_to_big_endian_bytes(bincode_commitment_vec);
         for i in 0..commitment_vec.len() {
             set_bivar_commitments_byte(i, from_node, commitment_vec[i]);
         }
@@ -542,14 +575,16 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
             // add this to the secret key share for the to node
             secret_key_shares[to_node].add_assign(&row.evaluate(0));
             // record the row
-            let row_vec = bincode::serialize(&row).unwrap();
+            let bincode_row_vec = bincode::serialize(&row).unwrap();
+            let row_vec = bincode_bytes_to_big_endian_bytes(bincode_row_vec);
             for i in 0..row_vec.len() {
                 set_bivar_row_byte(i, from_node, to_node, row_vec[i]);
             }
         }
     }
     // save the master commitment
-    let mpk_commitment_vec = bincode::serialize(&mpk_commitment).unwrap();
+    let bincode_mpk_commitment_vec = bincode::serialize(&mpk_commitment).unwrap();
+    let mpk_commitment_vec = bincode_bytes_to_big_endian_bytes(bincode_mpk_commitment_vec);
     for i in 0..mpk_commitment_vec.len() {
         set_mc_byte(i, mpk_commitment_vec[i]);
     }
@@ -561,7 +596,8 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
         set_mpk_byte(i, mpk_vec[i]);
     }
     // save the master secret key
-    let msk_vec = bincode::serialize(&msk).unwrap();
+    let bincode_msk_vec = bincode::serialize(&msk).unwrap();
+    let msk_vec = bincode_bytes_to_big_endian_bytes(bincode_msk_vec);
     for i in 0..msk_vec.len() {
         set_poly_byte(i, msk_vec[i]);
     }
@@ -569,7 +605,8 @@ pub fn generate_bivars(threshold: usize, total_nodes: usize) {
     for node_index in 0..total_nodes {
         let mut sk_val = secret_key_shares[node_index];
         let sk = SecretKeyShare::from_mut(&mut sk_val);
-        let sk_vec = bincode::serialize(&SerdeSecret(&sk)).unwrap();
+        let bincode_sk_vec = bincode::serialize(&SerdeSecret(&sk)).unwrap();
+        let sk_vec = bincode_bytes_to_big_endian_bytes(bincode_sk_vec);
         for i in 0..sk_vec.len() {
             set_bivar_sks_byte(i, node_index, sk_vec[i]);
         }
@@ -603,7 +640,8 @@ pub fn combine_signature_shares(total_signatures: usize, commitment_size: usize)
         let mc_byte = get_mc_byte(i);
         mc_bytes.push(mc_byte);
     }
-    let mc: Commitment = bincode::deserialize(&mc_bytes).unwrap();
+    let bincode_mc_bytes = big_endian_bytes_to_bincode_bytes(mc_bytes);
+    let mc: Commitment = bincode::deserialize(&bincode_mc_bytes).unwrap();
     // Combine signatures.
     let pkset = PublicKeySet::from(mc);
     let combined = pkset.combine_signatures(&sigs).unwrap();
@@ -619,21 +657,24 @@ pub fn combine_signature_shares(total_signatures: usize, commitment_size: usize)
 // and ciphertext is stored in CT_BYTES
 pub fn create_decryption_share(share_index: usize, ct_size: usize) -> usize {
     // create secret key
-    let mut sk_bytes: [u8; SK_SIZE] = [0; SK_SIZE];
+    let mut sk_bytes: Vec<u8> = vec![0_u8; SK_SIZE];
     for i in 0..SK_SIZE {
         sk_bytes[i] = get_sk_byte(i);
     }
-    let sk: SecretKeyShare = bincode::deserialize(&sk_bytes).unwrap();
+    let bincode_sk_bytes = big_endian_bytes_to_bincode_bytes(sk_bytes);
+    let sk: SecretKeyShare = bincode::deserialize(&bincode_sk_bytes).unwrap();
     // create ct vec from input parameters
     let mut ct_vec = Vec::new();
     for i in 0..ct_size {
         ct_vec.push(get_ct_byte(i));
     }
-    let ct: Ciphertext = bincode::deserialize(&ct_vec).unwrap();
+    let bincode_ct_vec = big_endian_bytes_to_bincode_bytes(ct_vec);
+    let ct: Ciphertext = bincode::deserialize(&bincode_ct_vec).unwrap();
     // create decryption share
     let decryption_share = sk.decrypt_share(&ct).unwrap();
     // serialize decryption_share
-    let dshare_bytes = bincode::serialize(&decryption_share).unwrap();
+    let bincode_dshare_bytes = bincode::serialize(&decryption_share).unwrap();
+    let dshare_bytes = bincode_bytes_to_big_endian_bytes(bincode_dshare_bytes);
     // store decryption_share
     for i in 0..dshare_bytes.len() {
         set_decryption_shares_byte(i, share_index, dshare_bytes[i]);
@@ -653,7 +694,8 @@ pub fn combine_decryption_shares(total_decryption_shares: usize, commitment_size
             let dshare_byte = get_decryption_shares_byte(i, share_index);
             dshare_bytes.push(dshare_byte);
         }
-        let dshare: DecryptionShare = bincode::deserialize(&dshare_bytes).unwrap();
+        let bincode_dshare_bytes = big_endian_bytes_to_bincode_bytes(dshare_bytes);
+        let dshare: DecryptionShare = bincode::deserialize(&bincode_dshare_bytes).unwrap();
         dshares.insert(index_in_group, dshare);
     }
     // read master commitment
@@ -662,13 +704,15 @@ pub fn combine_decryption_shares(total_decryption_shares: usize, commitment_size
         let mc_byte = get_mc_byte(i);
         mc_bytes.push(mc_byte);
     }
-    let mc: Commitment = bincode::deserialize(&mc_bytes).unwrap();
+    let bincode_mc_bytes = big_endian_bytes_to_bincode_bytes(mc_bytes);
+    let mc: Commitment = bincode::deserialize(&bincode_mc_bytes).unwrap();
     // create ct vec from input parameters
     let mut ct_vec = Vec::new();
     for i in 0..ct_size {
         ct_vec.push(get_ct_byte(i));
     }
-    let ct: Ciphertext = bincode::deserialize(&ct_vec).unwrap();
+    let bincode_ct_vec = big_endian_bytes_to_bincode_bytes(ct_vec);
+    let ct: Ciphertext = bincode::deserialize(&bincode_ct_vec).unwrap();
     // Combine decryption shares.
     let pkset = PublicKeySet::from(mc);
     let msg = pkset.decrypt(&dshares, &ct).unwrap();
