@@ -30,6 +30,23 @@ let tests = [
     },
 
     function() {
+        // Chia.net is the only place I could find test vectors that
+        // have hex encoded bls12-381 secret and public keys.
+        // There are many places that specify big endian but not many
+        // that have tests for it.
+        // For more info see
+        // https://safenetforum.org/t/simple-web-based-tool-for-bls-keys/32339/36
+        let name = "sk is cross compatible with other bls libraries";
+        DOM.skToPk.skHex.value = testData[4].sk;
+        DOM.skToPk.skHex.dispatchEvent(inputEvt);
+        let derivedPk = DOM.skToPk.pkHex.value;
+        if (derivedPk != testData[4].pk) {
+            throw(name + ": derived incorrect pk " + derivedPk);
+        }
+        next();
+    },
+
+    function() {
         let name = "Message can be signed with sk";
         DOM.signMsg.skHex.value = testData[0].sk;
         DOM.signMsg.msg.value = testData[0].msg;
@@ -416,6 +433,11 @@ let testData = [
     { // testData[3]
         "poly": "6e7c7909fb39d276fbca406d4df808b5938bfc8c263ec7be4567eb53770bf7b643082acb6a62a11e2d3237c67041abaecaa87096ad6e6b78e904ee85dc5b34bd4d3adf7dae2d8baca14c9dfa2859aceceaede33cc81080822aaba464e56f37620000000000000003",
     },
+    { // testData[4]
+        // sk and pk are from https://github.com/Chia-Network/bls-signatures/blob/ee71adc0efeae3a7487cf0662b7bee3825752a29/src/test.cpp#L254-L260
+        sk: "4a353be3dac091a0a7e640620372f5e1e2e4401717c1e79cac6ffba8f6905604",
+        pk: "85695fcbc06cc4c4c9451f4dce21cbf8de3e5a13bf48f44cdbb18e2038ba7b8bb1632d7911ef1e2e08749bddbf165352",
+    }
 ];
 
 let initialValue = null;
