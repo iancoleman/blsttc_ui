@@ -40,18 +40,49 @@
 
     <hr>
 
+    <div id="encoding">
+        <p id="binary">
+            Encoding for binary data:
+            <div class="option">
+                <input type="radio" name="binary-encoding" id="binary-hex" value="hex" checked>
+                <label for="binary-hex">hex</label>
+            </div>
+            <div class="option">
+                <input type="radio" name="binary-encoding" id="binary-bytes" value="bytes">
+                <label for="binary-bytes">bytes</label>
+            </div>
+        </p>
+        <p id="message">
+            Encoding for messages:
+            <div class="option">
+                <input type="radio" name="message-encoding" id="message-ascii" value="ascii" checked>
+                <label for="message-ascii">ascii</label>
+            </div>
+            <div class="option">
+                <input type="radio" name="message-encoding" id="message-hex" value="hex">
+                <label for="message-hex">hex</label>
+            </div>
+            <div class="option">
+                <input type="radio" name="message-encoding" id="message-bytes" value="bytes">
+                <label for="message-bytes">bytes</label>
+            </div>
+        </p>
+    </div>
+
+    <hr>
+
     <div id="sk-to-pk">
         <h2>Derive Public Key From Secret Key</h2>
 
         <p>
-        Input: Secret Key Hex (as per bincode serialization),
-        32 bytes ie 64 hex chars, or
+        Input: Secret Key,
+        32 bytes or 64 hex chars, or
         <button class="generate">generate</button> a random key.
         </p>
-        <input class="sk-hex" placeholder="eg 7b4ecc...">
+        <input type="text" class="sk" placeholder="eg 7b4ecc..." data-encoding-type="binary">
 
-        <p>Output: Public Key Hex, 48 bytes ie 96 hex chars.</p>
-        <input class="pk-hex" placeholder="eg a32fc9...">
+        <p>Output: Public Key Hex, 48 bytes or 96 hex chars.</p>
+        <input type="text" class="pk" placeholder="eg a32fc9..." data-encoding-type="binary">
 
         <p class="error text-red hidden"></p>
     </div>
@@ -63,23 +94,23 @@
         <h2>Sign Message</h2>
 
         <p>
-        Input: Secret Key Hex (as per bincode serialization),
-        32 bytes ie 64 hex chars.
+        Input: Secret Key.
+        32 bytes or 64 hex chars.
         </p>
-        <input class="sk-hex" placeholder="eg 7b4ecc...">
+        <input type="text" class="sk" placeholder="eg 7b4ecc..." data-encoding-type="binary">
 
         <p>
-        Input: Message can be any ascii input.
+        Input: Message.
         Copy and Paste from a text editor rather than typing manually is
         recommended here.
         </p>
-        <input class="msg" placeholder="eg This is my message">
+        <input type="text" class="msg" placeholder="eg This is my message" data-encoding-type="message">
 
         <p>
         Output: The signature for this message will appear here, 96 bytes ie
         192 hex chars.
         </p>
-        <input class="sig" placeholder="Signature will appear here.">
+        <input type="text" class="sig" placeholder="Signature will appear here." data-encoding-type="binary">
 
         <p class="error text-red hidden"></p>
     <hr>
@@ -88,25 +119,25 @@
 
         <h2>Verify Signature</h2>
 
-        <p>Input: Public Key Hex, 48 bytes ie 96 hex chars.</p>
-        <input class="pk-hex" placeholder="eg a32fc9...">
+        <p>Input: Public Key, 48 bytes or 96 hex chars.</p>
+        <input type="text" class="pk" placeholder="eg a32fc9..." data-encoding-type="binary">
 
         <p>
-        Input: Message can be any ascii input.
+        Input: Message.
         Copy and Paste from a text editor rather than typing manually is
         recommended here.
         </p>
-        <input class="msg" placeholder="eg This is my message">
+        <input type="text" class="msg" placeholder="eg This is my message" data-encoding-type="message">
 
         <p>
         Input: The signature for this message.
         </p>
-        <input class="sig" placeholder="eg 8ad3c2...">
+        <input type="text" class="sig" placeholder="eg 8ad3c2..." data-encoding-type="binary">
 
         <p>
         Output: Whether the signature is valid or not.
         </p>
-        <input class="valid" placeholder="Will show 'valid' or 'invalid'">
+        <input type="text" class="valid" placeholder="Will show 'valid' or 'invalid'">
 
         <p class="error text-red hidden"></p>
     </div>
@@ -117,21 +148,21 @@
 
         <h2>Encrypt Message</h2>
 
-        <p>Input: Recipient Public Key Hex, 48 bytes ie 96 hex chars.</p>
-        <input class="pk-hex" placeholder="eg a32fc9...">
+        <p>Input: Recipient Public Key, 48 bytes or 96 hex chars.</p>
+        <input type="text" class="pk" placeholder="eg a32fc9..." data-encoding-type="binary">
 
         <p>
-        Input: Message can be any ascii input.
+        Input: Message.
         Copy and Paste from a text editor rather than typing manually is
         recommended here.
         </p>
-        <input class="msg" placeholder="eg This is my message">
+        <input type="text" class="msg" placeholder="eg This is my message" data-encoding-type="message">
 
         <p>
         Output: The encrypted version of this message for sending to the
         recipient.
         </p>
-        <input class="ct" placeholder="Encrypted message will appear here.">
+        <input type="text" class="ct" placeholder="Encrypted message will appear here." data-encoding-type="binary">
 
         <p class="error text-red hidden"></p>
     </div>
@@ -143,20 +174,20 @@
         <h2>Decrypt Message</h2>
 
         <p>
-        Input: Secret Key Hex (as per bincode serialization),
-        32 bytes ie 64 hex chars.
+        Input: Secret Key.
+        32 bytes or 64 hex chars.
         </p>
-        <input class="sk-hex" placeholder="eg 7b4ecc...">
+        <input type="text" class="sk" placeholder="eg 7b4ecc..." data-encoding-type="binary">
 
         <p>
-        Input: The encrypted message (hex encoded).
+        Input: The encrypted message.
         </p>
-        <input class="ct" placeholder="Encrypted message will appear here.">
+        <input type="text" class="ct" placeholder="eg 82a99b..." data-encoding-type="binary">
 
         <p>
-        Output: The decrypted message (ascii encoded).
+        Output: The decrypted message.
         </p>
-        <input class="msg" placeholder="eg This is my message">
+        <input type="text" class="msg" placeholder="eg This is my message" data-encoding-type="message">
 
         <p class="error text-red hidden"></p>
     </div>
@@ -181,14 +212,14 @@
         (this is the m in m-of-n). Minimum 2, maximum 10. Make a secure backup
         of poly if you want to derive key shares in the future.
         </p>
-        <input class="poly-hex" placeholder="eg 7b4ecc...">
+        <input type="text" class="poly-hex" placeholder="eg 7b4ecc...">
 
         <p>
         Output: Master Secret Key Hex, 48 bytes ie 96 hex chars.
         Never used for anything and should never be shared, just shown here
         for information.
         </p>
-        <input class="msk-hex" placeholder="eg 39f3bb0...">
+        <input type="text" class="msk-hex" placeholder="eg 39f3bb0...">
 
         <p>
         Output: Master Public Key Hex, 48 bytes ie 96 hex chars.
@@ -197,14 +228,14 @@
         signatures will be aggregated to produce a combined signature which
         can be verified with this master public key.
         </p>
-        <input class="mpk-hex" placeholder="eg a32fc9...">
+        <input type="text" class="mpk-hex" placeholder="eg a32fc9...">
 
         <p>
         Output: Master Commitment Hex.
         This is the basis of the Master Public Key and is needed for
         combining signature or decryption shares.
         </p>
-        <input class="mc-hex" placeholder="eg b43a04...">
+        <input type="text" class="mc-hex" placeholder="eg b43a04...">
 
         <p>
         Show
@@ -280,14 +311,14 @@
         messages. This is generated in Step 5, shown below the table, but is
         shown here because it's known by all participants.
         </p>
-        <input class="mpk-hex" placeholder="eg a32fc9...">
+        <input type="text" class="mpk-hex" placeholder="eg a32fc9...">
 
         <p>
         Output: The group master commitment used when decrypting and signing
         messages. This is generated in Step 5, shown below the table, but is
         shown here because it's known by all participants.
         </p>
-        <input class="mc-hex" placeholder="eg b43ad0...">
+        <input type="text" class="mc-hex" placeholder="eg b43ad0...">
 
         <p>
         Hover on a cell, the details of the relevant shares will
@@ -341,7 +372,7 @@
             The public portion is shared to all nodes and combined into
             the group master public key in Step 5.
         </p>
-        <input class="share-creation">
+        <input type="text" class="share-creation">
 
         <p>
             Step 2: Listed below are shares node
@@ -389,14 +420,14 @@
             <span class="receiver-id">0</span>
             in Step 3.
         </p>
-        <input class="skshare-hex" placeholder="eg 9bb286...">
+        <input type="text" class="skshare-hex" placeholder="eg 9bb286...">
 
         <p>
             Step 4b: Public Key Share for node
             <span class="receiver-id">0</span>.
             This is derived from the secret key in Step 4.
         </p>
-        <input class="pkshare-hex" placeholder="eg 209a48...">
+        <input type="text" class="pkshare-hex" placeholder="eg 209a48...">
 
         <p>
             Step 5: The group master public key can be derived by any node by
@@ -434,7 +465,7 @@
         But it's handy for using elsewhere in this tool,
         such as the input for Simple Threshold Keys.
         </p>
-        <input class="msk-poly-hex"></textarea>
+        <input type="text" class="msk-poly-hex">
 
     </div>
 
@@ -461,14 +492,14 @@
         <a href="#dkg">DKG</a>
         and should be known by all nodes in the group.
         </p>
-        <input class="mc-hex" placeholder="eg 800bfc9...">
+        <input type="text" class="mc-hex" placeholder="eg 800bfc9...">
 
         <p>
-        Input: Message can be any ascii input.
+        Input: Message.
         Copy and Paste from a text editor rather than typing manually is
         recommended here.
         </p>
-        <input class="msg" placeholder="eg This group formed in August 2020">
+        <input type="text" class="msg" placeholder="eg This group formed in August 2020">
 
         <p>
         Output: Signature Shares. These are combined into the group signature
@@ -488,7 +519,7 @@
         the signature can serve as a pseudorandom number unknown to anyone
         until m participants agree to reveal it.
         </p>
-        <input class="sig">
+        <input type="text" class="sig">
 
     </div>
 
@@ -552,7 +583,7 @@
         <a href="#dkg">DKG</a>
         and should be known by all nodes in the group.
         </p>
-        <input class="mc-hex" placeholder="eg 800bfc9...">
+        <input type="text" class="mc-hex" placeholder="eg 800bfc9...">
 
         <p>
         Input: Ciphertext. This is text encrypted using the group Master
@@ -560,7 +591,7 @@
         <a href="#encrypt">encrypt</a>
         section.
         </p>
-        <input class="ct">
+        <input type="text" class="ct">
 
         <p>
         Output: Decryption Shares. These are combined into the decrypted
@@ -575,7 +606,7 @@
         m-of-n members of the group have provided their decryption share.
         If less than m shares are combined the message will be invalid.
         </p>
-        <input class="msg">
+        <input type="text" class="msg">
 
     </div>
 
@@ -634,6 +665,7 @@
     <script src="js/dom.js"></script>
     <script src="js/constants.js"></script>
     <script src="js/wasm_helpers.js"></script>
+    <script src="js/encoding.js"></script>
     <script src="js/errors.js"></script>
     <script src="js/ordered_share.js"></script>
     <script src="js/sk_to_pk.js"></script>

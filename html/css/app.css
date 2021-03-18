@@ -9,7 +9,8 @@ body {
     right: 15px;
 }
 
-input,
+input[type='text'],
+input[type='number'],
 textarea,
 div[contenteditable="true"] {
     font-family: Monospace;
@@ -66,4 +67,8 @@ table.shares td {
 .shared-secret {
     padding: 10px 0;
     margin: 1px 0;
+}
+
+#encoding .option {
+    margin-bottom: 5px;
 }

@@ -7,11 +7,11 @@ let tests = [
     function() {
         let name = "Clicking generate shows sk and pk";
         DOM.skToPk.generate.dispatchEvent(clickEvt);
-        let skLen = DOM.skToPk.skHex.value.length;
+        let skLen = DOM.skToPk.sk.value.length;
         if (skLen != 64) {
             throw(name + ": invalid sk length " + skLen);
         }
-        let pkLen = DOM.skToPk.pkHex.value.length;
+        let pkLen = DOM.skToPk.pk.value.length;
         if (pkLen != 96) {
             throw(name + ": invalid pk length " + pkLen);
         }
@@ -20,9 +20,9 @@ let tests = [
 
     function() {
         let name = "Entering sk shows correct pk";
-        DOM.skToPk.skHex.value = testData[0].sk;
-        DOM.skToPk.skHex.dispatchEvent(inputEvt);
-        let derivedPk = DOM.skToPk.pkHex.value;
+        DOM.skToPk.sk.value = testData[0].sk;
+        DOM.skToPk.sk.dispatchEvent(inputEvt);
+        let derivedPk = DOM.skToPk.pk.value;
         if (derivedPk != testData[0].pk) {
             throw(name + ": derived incorrect pk " + derivedPk);
         }
@@ -37,9 +37,9 @@ let tests = [
         // For more info see
         // https://safenetforum.org/t/simple-web-based-tool-for-bls-keys/32339/36
         let name = "is cross compatible with other bls libraries";
-        DOM.skToPk.skHex.value = testData[4].sk;
-        DOM.skToPk.skHex.dispatchEvent(inputEvt);
-        let derivedPk = DOM.skToPk.pkHex.value;
+        DOM.skToPk.sk.value = testData[4].sk;
+        DOM.skToPk.sk.dispatchEvent(inputEvt);
+        let derivedPk = DOM.skToPk.pk.value;
         if (derivedPk != testData[4].pk) {
             throw(name + ": derived incorrect pk " + derivedPk);
         }
@@ -60,7 +60,7 @@ let tests = [
 
     function() {
         let name = "Message can be signed with sk";
-        DOM.signMsg.skHex.value = testData[0].sk;
+        DOM.signMsg.sk.value = testData[0].sk;
         DOM.signMsg.msg.value = testData[0].msg;
         DOM.signMsg.msg.dispatchEvent(inputEvt);
         waitForChange(DOM.signMsg.sig, function() {
@@ -74,7 +74,7 @@ let tests = [
 
     function() {
         let name = "Signature can be verified";
-        DOM.verify.pkHex.value = testData[0].pk;
+        DOM.verify.pk.value = testData[0].pk;
         DOM.verify.msg.value = testData[0].msg;
         DOM.verify.sig.value = testData[0].sig;
         DOM.verify.sig.dispatchEvent(inputEvt);
@@ -91,7 +91,7 @@ let tests = [
         let name = "Incorrect signature shows invalid";
         let invalidSig = testData[0].sig;
         invalidSig = "0000" + invalidSig.substring(4, invalidSig.length);
-        DOM.verify.pkHex.value = testData[0].pk;
+        DOM.verify.pk.value = testData[0].pk;
         DOM.verify.msg.value = testData[0].msg;
         DOM.verify.sig.value = invalidSig;
         DOM.verify.sig.dispatchEvent(inputEvt);
@@ -106,7 +106,7 @@ let tests = [
 
     function() {
         let name = "Message can be encrypted with pk";
-        DOM.encrypt.pkHex.value = testData[0].pk;
+        DOM.encrypt.pk.value = testData[0].pk;
         DOM.encrypt.msg.value = testData[0].msg;
         DOM.encrypt.msg.dispatchEvent(inputEvt);
         waitForChange(DOM.encrypt.ct, function() {
@@ -121,7 +121,7 @@ let tests = [
 
     function() {
         let name = "Ciphertext can be decrypted with sk";
-        DOM.decrypt.skHex.value = testData[0].sk;
+        DOM.decrypt.sk.value = testData[0].sk;
         DOM.decrypt.msg.value = testData[0].msg;
         DOM.decrypt.ct.value = testData[0].ct;
         DOM.decrypt.ct.dispatchEvent(inputEvt);
@@ -136,7 +136,7 @@ let tests = [
 
     function() {
         let name = "Ciphertext cannot be decrypted with invalid sk";
-        DOM.decrypt.skHex.value = testData[1].sk; // NB invalid sk
+        DOM.decrypt.sk.value = testData[1].sk; // NB invalid sk
         DOM.decrypt.msg.value = testData[0].msg;
         DOM.decrypt.ct.value = testData[0].ct;
         DOM.decrypt.ct.dispatchEvent(inputEvt);
@@ -265,7 +265,7 @@ let tests = [
                 throw(name + ": incorrect signature");
             }
             // check group signature is valid
-            DOM.verify.pkHex.value = testData[2].mpk;
+            DOM.verify.pk.value = testData[2].mpk;
             DOM.verify.msg.value = testData[2].msg;
             DOM.verify.sig.value = sig;
             DOM.verify.sig.dispatchEvent(inputEvt);

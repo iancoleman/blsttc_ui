@@ -15,10 +15,16 @@ function uint8ArrayToAscii(a) {
 }
 // https://stackoverflow.com/a/50868276
 function hexToUint8Array(h) {
+    if (h.length == 0) {
+        return new Uint8Array();
+    }
     return new Uint8Array(h.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
 }
 function uint8ArrayToHex(a) {
     return a.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+}
+function uint8ArrayToByteStr(a) {
+    return "[" + a.join(", ") + "]";
 }
 // https://stackoverflow.com/a/12713326
 function uint8ArrayToBase64(a) {

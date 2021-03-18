@@ -17,8 +17,8 @@ let errorMessages = {
 
     skLength: function(size) {
         let errMsg = "Secret Key length must be ";
-        errMsg += (skLen * 2).toString();
-        errMsg += " hex chars, ";
+        errMsg += (skLen).toString();
+        errMsg += " bytes, ";
         errMsg += size.toString();
         errMsg += " provided.";
         return errMsg;
@@ -26,8 +26,8 @@ let errorMessages = {
 
     pkLength: function(size) {
     let errMsg = "Public Key length must be ";
-        errMsg += (pkLen * 2).toString();
-        errMsg += " hex chars, ";
+        errMsg += (pkLen).toString();
+        errMsg += " bytes, ";
         errMsg += size.toString();
         errMsg += " provided.";
         return errMsg;
@@ -35,26 +35,26 @@ let errorMessages = {
 
     sigLength: function(size) {
         let errMsg = "Signature length must be ";
-        errMsg += (sigLen * 2).toString();
-        errMsg += " hex chars, ";
+        errMsg += (sigLen).toString();
+        errMsg += " bytes, ";
         errMsg += size.toString();
         errMsg += " provided.";
         return errMsg;
     },
 
     msgLength: function(size) {
-        let errMsg = "Message length must be ";
+        let errMsg = "Message length must be no more than ";
         errMsg += (maxMsgLen).toString();
-        errMsg += " chars, ";
+        errMsg += " bytes, ";
         errMsg += size.toString();
         errMsg += " provided.";
         return errMsg;
     },
 
     ctLength: function(size) {
-        let errMsg = "Ciphertext length must be ";
-        errMsg += (ctLen * 2).toString();
-        errMsg += " hex chars, ";
+        let errMsg = "Ciphertext length must be no more than ";
+        errMsg += (ctLen).toString();
+        errMsg += " bytes, ";
         errMsg += size.toString();
         errMsg += " provided.";
         return errMsg;
