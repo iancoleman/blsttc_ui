@@ -36,13 +36,25 @@ let tests = [
         // that have tests for it.
         // For more info see
         // https://safenetforum.org/t/simple-web-based-tool-for-bls-keys/32339/36
-        let name = "sk is cross compatible with other bls libraries";
+        let name = "is cross compatible with other bls libraries";
         DOM.skToPk.skHex.value = testData[4].sk;
         DOM.skToPk.skHex.dispatchEvent(inputEvt);
         let derivedPk = DOM.skToPk.pkHex.value;
         if (derivedPk != testData[4].pk) {
             throw(name + ": derived incorrect pk " + derivedPk);
         }
+        // signature check
+        DOM.verify.pkHex.value = testData[4].pk;
+        DOM.verify.msg.value = testData[4].msg;
+        DOM.verify.sig.value = testData[4].sig;
+        DOM.verify.sig.dispatchEvent(inputEvt);
+        waitForChange(DOM.verify.valid, function() {
+            let validity = DOM.verify.valid.value;
+            if (validity != "valid") {
+                throw(name + ": chia signature did not show as valid");
+            }
+            next();
+        });
         next();
     },
 
@@ -437,6 +449,8 @@ let testData = [
         // sk and pk are from https://github.com/Chia-Network/bls-signatures/blob/ee71adc0efeae3a7487cf0662b7bee3825752a29/src/test.cpp#L254-L260
         sk: "4a353be3dac091a0a7e640620372f5e1e2e4401717c1e79cac6ffba8f6905604",
         pk: "85695fcbc06cc4c4c9451f4dce21cbf8de3e5a13bf48f44cdbb18e2038ba7b8bb1632d7911ef1e2e08749bddbf165352",
+        sig: "b8faa6d6a3881c9fdbad803b170d70ca5cbf1e6ba5a586262df368c75acd1d1ffa3ab6ee21c71f844494659878f5eb230c958dd576b08b8564aad2ee0992e85a1e565f299cd53a285de729937f70dc176a1f01432129bb2b94d3d5031f8065a1",
+        msg: String.fromCharCode(7)+String.fromCharCode(8)+String.fromCharCode(9),
     }
 ];
 
