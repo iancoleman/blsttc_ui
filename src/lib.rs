@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use wasm_bindgen::prelude::*;
-use threshold_crypto::{Ciphertext, DecryptionShare, Fr, PublicKey, PublicKeySet, SecretKey, SecretKeySet, SecretKeyShare, Signature, SignatureShare, poly::{
+use blsttc::{Ciphertext, DecryptionShare, Fr, PublicKey, PublicKeySet, SecretKey, SecretKeySet, SecretKeyShare, Signature, SignatureShare, poly::{
     Poly,
     BivarPoly,
     Commitment,

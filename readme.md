@@ -6,6 +6,11 @@ $ wasm-pack build --target=web; python convert.py
 
 This will create bls-standalone.html which you can double click to use the tool.
 
+This probably needs a few things installed:
+
+wasm-pack: https://rustwasm.github.io/wasm-pack/installer/
+wasi-sdk: https://github.com/WebAssembly/wasi-sdk
+
 # Developers
 
 Add new wasm functions to `src/lib.rs`.
