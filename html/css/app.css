@@ -69,6 +69,31 @@ table.shares td {
     margin: 1px 0;
 }
 
+#binary,
+#message,
 #encoding .option {
-    margin-bottom: 5px;
+    display: inline-block;
+}
+
+#binary {
+    margin: 25px 30px 25px 0;
+}
+
+#encoding input {
+    display: none;
+}
+
+#encoding label {
+    padding: 20px;
+    line-height: 35px;
+    border-radius: 10px;
+    border: 1px solid #CCC;
+}
+
+#binary-hex:checked + label,
+#binary-bytes:checked + label,
+#message-ascii:checked + label,
+#message-hex:checked + label,
+#message-bytes:checked + label {
+    border: 6px solid #CCC;
 }
