@@ -162,7 +162,7 @@ this.decrypt = function(s, c) {
 
 this.generate_poly = function(threshold) {
     wasmHelpers.set_rng_values();
-    let polySize = poly_sizes_by_threshold[threshold];
+    let polySize = skLen * (threshold + 1);
     wasmExports.generate_poly(threshold);
     let polyBytes = [];
     for (let i=0; i<polySize; i++) {
@@ -192,7 +192,7 @@ this.get_mpk_bytes = function() {
 
 this.get_mc_bytes = function(threshold) {
     let mcBytes = [];
-    let mcSize = commitment_sizes_by_threshold[threshold];
+    let mcSize = pkLen * (threshold + 1);
     for (let i=0; i<mcSize; i++) {
         let mcByte = wasmExports.get_mc_byte(i);
         mcBytes.push(mcByte);

@@ -17,7 +17,7 @@
         self.to = to;
 
         // get share creation
-        let bytesPerCommitment = commitment_sizes_by_threshold[threshold];
+        let bytesPerCommitment = pkLen * (threshold + 1);
         let commitmentBytes = [];
         for (let i=0; i<bytesPerCommitment; i++) {
             let commitmentByte = wasmExports.get_bivar_commitments_byte(i, from);
@@ -27,7 +27,7 @@
 
         // get shares created
         let sharesCreated = [];
-        let bytesPerRow = row_sizes_by_threshold[threshold];
+        let bytesPerRow = skLen * (threshold + 1);
         for (let toNode=0; toNode<totalNodes; toNode++) {
             let rowBytes = [];
             for (let i=0; i<bytesPerRow; i++) {
@@ -439,7 +439,7 @@
         }
         DOM.dkg.allShareCreations.value = bivarCommitments.trim();
         // show master secret key
-        let mskPolySize = poly_sizes_by_threshold[threshold];
+        let mskPolySize = skLen * (threshold + 1)
         let mskPolyBytes = [];
         for (let i=0; i<mskPolySize; i++) {
             let mskPolyByte = wasmExports.get_poly_byte(i);

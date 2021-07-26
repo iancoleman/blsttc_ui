@@ -14,14 +14,16 @@ const SIG_SIZE: usize = 96;
 // DKG constants
 const MAX_NODES: usize = 10;
 const MAX_ROW_SIZE: usize = 360;
-const MAX_COMMITMENT_SIZE: usize = 536;
+const MAX_COMMITMENT_SIZE: usize = PK_SIZE * MAX_NODES;
+const MAX_POLY_SIZE: usize = SK_SIZE * MAX_NODES;
 const MAX_SHARES: usize = MAX_NODES * MAX_NODES;
 const ROW_BYTES: usize = MAX_ROW_SIZE * MAX_SHARES;
-const BIVAR_COMMITMENTS_SIZE: usize = MAX_COMMITMENT_SIZE * MAX_NODES;
+const BIVAR_POLY_SIZE: usize = SK_SIZE * MAX_NODES * (MAX_NODES + 1) / 2;
+const BIVAR_COMMITMENT_SIZE: usize = PK_SIZE * MAX_NODES * (MAX_NODES + 1) / 2;
 // MSG can be up to 1 MiB + 1 KiB
 const MAX_MSG_SIZE: usize = 1049600;
-// CT has overhead of 152 B so is 1 MiB + 1 KiB + 152 B
-const MAX_CT_SIZE: usize = MAX_MSG_SIZE + 152;
+// CT has overhead of 144 B so is 1 MiB + 144 B
+const MAX_CT_SIZE: usize = MAX_MSG_SIZE + 144;
 
 static mut SK_BYTES: [u8; SK_SIZE] = [0; SK_SIZE];
 static mut PK_BYTES: [u8; PK_SIZE] = [0; PK_SIZE];
@@ -38,22 +40,18 @@ const RNG_VALUES_SIZE: usize = 376 * 2 * MAX_NODES;
 static mut RNG_VALUES: [u32; RNG_VALUES_SIZE] = [0; RNG_VALUES_SIZE];
 static mut RNG_INDEX: usize = 0;
 static mut RNG_NEXT_COUNT: usize = 0;
-// Poly which can be converted into SecretKeySet
-// Threshold of 10 gives poly size of 360 bytes when serialized
-// Threshold of 10 gives commitment size of 536 bytes when serialized
-static mut POLY_BYTES: [u8; 360] = [0; 360];
+// Poly and commitment
+static mut POLY_BYTES: [u8; MAX_POLY_SIZE] = [0; MAX_POLY_SIZE];
 static mut MSK_BYTES: [u8; SK_SIZE] = [0; SK_SIZE];
 static mut MPK_BYTES: [u8; PK_SIZE] = [0; PK_SIZE];
-static mut MC_BYTES: [u8; 536] = [0; 536];
+static mut MC_BYTES: [u8; MAX_COMMITMENT_SIZE] = [0; MAX_COMMITMENT_SIZE];
 static mut SKSHARE_BYTES: [u8; SK_SIZE] = [0; SK_SIZE];
 static mut PKSHARE_BYTES: [u8; PK_SIZE] = [0; PK_SIZE];
 // DKG variables
-// Threshold of 10 gives row size of 360 bytes when serialized
-// Threshold of 10 gives commitment size of 3184 bytes when serialized
 static mut BIVAR_ROW_BYTES: [u8; ROW_BYTES] = [0; ROW_BYTES];
-static mut BIVAR_COMMITMENTS_BYTES: [u8; BIVAR_COMMITMENTS_SIZE] = [0; BIVAR_COMMITMENTS_SIZE];
-static mut BIVAR_SKS_BYTES: [u8; SK_SIZE * MAX_NODES] = [0; SK_SIZE * MAX_NODES];
-static mut BIVAR_PKS_BYTES: [u8; PK_SIZE * MAX_NODES] = [0; PK_SIZE * MAX_NODES];
+static mut BIVAR_COMMITMENT_BYTES: [u8; BIVAR_COMMITMENT_SIZE] = [0; BIVAR_COMMITMENT_SIZE];
+static mut BIVAR_SKS_BYTES: [u8; BIVAR_POLY_SIZE] = [0; BIVAR_POLY_SIZE];
+static mut BIVAR_PKS_BYTES: [u8; BIVAR_COMMITMENT_SIZE] = [0; BIVAR_COMMITMENT_SIZE];
 // Group signing variables
 static mut SIGNATURE_SHARE_BYTES: [u8; SIG_SIZE * MAX_NODES] = [0; SIG_SIZE * MAX_NODES];
 static mut SHARE_INDEXES: [usize; MAX_NODES] = [0; MAX_NODES];
@@ -227,14 +225,14 @@ pub fn get_bivar_row_byte(i: usize, from_node: usize, to_node: usize) -> u8 {
 pub fn set_bivar_commitments_byte(i: usize, from_node: usize, v: u8) {
     unsafe {
         let commitment_byte_start = from_node * MAX_COMMITMENT_SIZE;
-        BIVAR_COMMITMENTS_BYTES[commitment_byte_start + i] = v;
+        BIVAR_COMMITMENT_BYTES[commitment_byte_start + i] = v;
     }
 }
 #[wasm_bindgen]
 pub fn get_bivar_commitments_byte(i: usize, from_node: usize) -> u8 {
     unsafe {
         let commitment_byte_start = from_node * MAX_COMMITMENT_SIZE;
-        BIVAR_COMMITMENTS_BYTES[commitment_byte_start + i]
+        BIVAR_COMMITMENT_BYTES[commitment_byte_start + i]
     }
 }
 #[wasm_bindgen]
@@ -399,7 +397,7 @@ pub fn decrypt(ct_size: usize) -> usize {
     for i in 0..ct_size {
         ct_vec.push(get_ct_byte(i));
     }
-    let ct = CipherText::from_bytes(ct_vec).unwrap();
+    let ct = Ciphertext::from_bytes(&ct_vec).unwrap();
     if !ct.verify() {
         return 0;
     }
@@ -628,7 +626,7 @@ pub fn create_decryption_share(share_index: usize, ct_size: usize) -> usize {
     for i in 0..ct_size {
         ct_vec.push(get_ct_byte(i));
     }
-    let ct = Ciphertext::from_bytes(ct_vec).unwrap();
+    let ct = Ciphertext::from_bytes(&ct_vec).unwrap();
     // create decryption share
     let decryption_share = sk.decrypt_share(&ct).unwrap();
     // serialize decryption_share
@@ -667,7 +665,7 @@ pub fn combine_decryption_shares(total_decryption_shares: usize, commitment_size
     for i in 0..ct_size {
         ct_vec.push(get_ct_byte(i));
     }
-    let ct = Ciphertext::from_bytes(ct_vec).unwrap();
+    let ct = Ciphertext::from_bytes(&ct_vec).unwrap();
     // Combine decryption shares.
     let pkset = PublicKeySet::from(mc);
     let msg = pkset.decrypt(&dshares, &ct).unwrap();
