@@ -4,8 +4,9 @@ use blsttc::{Ciphertext, DecryptionShare, Fr, PublicKey, PublicKeySet, SecretKey
     Poly,
     BivarPoly,
     Commitment,
-}, ff::Field};
+}, group::ff::Field};
 use std::str;
+use std::ops::AddAssign;
 
 const SK_SIZE: usize = 32;
 const PK_SIZE: usize = 48;
@@ -707,3 +708,14 @@ impl RngCore for ExternalRng {
         Ok(self.fill_bytes(dest))
     }
 }
+
+// https://forum.dfinity.org/t/rust-wasm-getrandom-custom/6351/2
+// This is needed since updating rand from 0.7 to 0.8 which changes the
+// getrandom dependency to 0.2
+// Using the "js" feature wasn't working with this tool so instead use the
+// "custom" feature.
+use getrandom::register_custom_getrandom;
+fn custom_getrandom(_buf: &mut [u8]) -> Result<(), getrandom::Error> {
+    return Ok(());
+}
+register_custom_getrandom!(custom_getrandom);
